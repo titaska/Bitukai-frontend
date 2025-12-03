@@ -1,18 +1,34 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
+
+import Dashboard from "./pages/Dashboard";
 import Reservations from "./pages/Reservations";
 import NewReservation from "./pages/NewReservation";
+import Staff from "./pages/Staff";
+import Settings from "./pages/Settings";
 
-function App() {
+export default function App() {
   return (
     <Router>
-      <Navbar />
-      <Routes>
-        <Route path="/reservations" element={<Reservations />} />
-        <Route path="/reservations/new" element={<NewReservation />} />
-      </Routes>
+      <div style={{ display: "flex" }}>
+        
+       
+        <Navbar />
+
+        
+        <main style={{ marginLeft: "80px", padding: "20px", width: "100%" }}>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/reservations" element={<Reservations />} />
+            <Route path="/new-reservation" element={<NewReservation />} />
+            <Route path="/staff" element={<Staff />} />
+            <Route path="/settings" element={<Settings />} />
+          </Routes>
+        </main>
+
+      </div>
     </Router>
   );
 }
 
-export default App;
+
