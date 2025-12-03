@@ -1,3 +1,7 @@
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -10,4 +14,212 @@ body {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sidebar */
+
+.sidebar {
+  width: 80px;
+  background: #cfc5e9;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 16px;
+}
+
+.logo {
+  width: 40px;
+  height: 40px;
+  background: #7c64d6;
+  border-radius: 8px;
+  margin-bottom: 32px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.nav-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0.5;
+}
+
+.nav-btn.active {
+  background: rgba(255, 255, 255, 0.8);
+  opacity: 1;
+}
+
+/* Main */
+
+.main-content {
+  flex: 1;
+  padding: 32px 48px;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+/* Buttons */
+
+.primary-btn,
+.secondary-btn {
+  border-radius: 999px;
+  padding: 8px 18px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.primary-btn {
+  background: #7c64d6;
+  color: #fff;
+}
+
+.primary-btn.small {
+  padding: 6px 14px;
+  font-size: 13px;
+}
+
+.secondary-btn {
+  background: #fff;
+  border: 1px solid #d2caee;
+  color: #444;
+}
+
+.secondary-btn.danger {
+  border-color: #f0a3a3;
+  color: #b52b2b;
+}
+
+/* Tables */
+
+.staff-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.staff-table th,
+.staff-table td {
+  padding: 12px 18px;
+  font-size: 14px;
+}
+
+.staff-table thead {
+  background: #f0edf9;
+}
+
+.staff-table tbody tr + tr {
+  border-top: 1px solid #eee;
+}
+
+.actions-cell {
+  display: flex;
+  gap: 8px;
+}
+
+/* Links as buttons */
+
+.link-like {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #7c64d6;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+/* Cards */
+
+.card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 18px 20px;
+  margin-bottom: 24px;
+}
+
+.card-row {
+  display: flex;
+  gap: 48px;
+  margin-bottom: 12px;
+}
+
+.label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8b85a5;
+}
+
+.card-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Modal */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal {
+  background: #fff;
+  padding: 24px 32px;
+  border-radius: 18px;
+  min-width: 480px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+}
+
+.modal h2 {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.modal-form .form-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.modal-form input {
+  flex: 1;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 6px;
 }

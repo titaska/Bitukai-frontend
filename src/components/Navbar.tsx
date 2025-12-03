@@ -11,6 +11,12 @@ export default function Navbar() {
         <Button color="inherit" component={Link} to="/reservations/new">
           New Reservation
         </Button>
+        <Button color="inherit" component={Link} to="/staff">
+          Staff
+        </Button>
+        <Button color="inherit" component={Link} to="/config">
+          Configuration
+        </Button>
       </Toolbar>
     </AppBar>
   );
