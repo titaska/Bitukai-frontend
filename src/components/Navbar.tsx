@@ -3,7 +3,6 @@ import "./Navbar.css";
 import { BusinessType } from "../types/business";
 import {
   Home,
-  List,
   Calendar,
   Settings,
   Users,

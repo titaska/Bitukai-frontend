@@ -1,0 +1,84 @@
+/* Toolbar */
+.fc .fc-toolbar-chunk {
+  display: flex;
+}
+
+.fc .fc-toolbar-title {
+  font-weight: 600;
+  color: #5A5883;
+  margin-right: 20px;
+  font-size: 22px;
+}
+
+.fc .fc-button-primary.fc-prev-button,
+.fc .fc-button-primary.fc-next-button {
+  background-color: white;
+  border-color: #ccc;
+  color: #333;
+  padding: 0px;
+  margin: 0 !important;
+  border: none;
+  color: #5A5883;
+}
+
+.fc .fc-dayGridDay-button,
+.fc .fc-dayGridWeek-button,
+.fc .fc-dayGridMonth-button {
+  background-color: white !important;
+  color: #B3B0C8 !important;
+  border: 1px solid #B3B0C8 !important;
+  border-radius: 25px !important;
+  padding: 6px 12px !important;
+  margin: 0 4px !important;
+  text-transform: capitalize;
+}
+
+.fc .fc-button-active.fc-dayGridDay-button,
+.fc .fc-button-active.fc-dayGridWeek-button,
+.fc .fc-button-active.fc-dayGridMonth-button {
+  background-color: #B3B0C8 !important;
+  color: white !important;
+  border: 1px solid #B3B0C8 !important;
+}
+
+.fc .fc-addAppointmentButton-button {
+  background-color: #5A5883;
+  color: white;
+  border-radius: 25px;
+  padding: 6px 16px;
+  margin-left: 8px;
+  font-weight: 500;
+}
+
+/* Calendar */
+.fc .fc-col-header-cell {
+  background: #B3B0C8;
+  color: #5A5883;
+  font-size: 22px !important;
+  font-weight: 600;
+  padding: 16px 0 !important;
+  font-size: 16px;
+}
+
+.fc .fc-daygrid-day {
+  border-color: #5A5883;
+  position: relative;
+  padding-top: 40px;
+}
+
+.fc .fc-daygrid-day-number {
+  font-weight: 600;
+  color: #5A5883;
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  font-size: 20px;
+}
+
+.fc .fc-daygrid-day.fc-day-sun .fc-daygrid-day-number {
+  color: red;
+}
+
+.fc .fc-daygrid-day.fc-day-today {
+  background-color: #dad8e6;
+}
