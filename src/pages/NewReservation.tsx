@@ -1,8 +1,11 @@
 import React, { useState } from "react";
 import "./NewReservation.css";
-import { staffData } from "../mock/staff";
+import { staffData as initialStaffData } from "../mock/staff";
+import TimeSlotSelector from "../components/TimeSlotSelector";
 
 export default function NewReservation() {
+  const [staffData, setStaffData] = useState(initialStaffData); // now editable!
+
   const [selectedStaff, setSelectedStaff] = useState<number | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
 
@@ -12,7 +15,7 @@ export default function NewReservation() {
   const [notes, setNotes] = useState("");
 
   function handleSlotSelect(staffId: number, slotTime: string, taken: boolean) {
-    if (taken) return; 
+    if (taken) return;
     setSelectedStaff(staffId);
     setSelectedSlot(slotTime);
   }
@@ -22,6 +25,19 @@ export default function NewReservation() {
       alert("Please select a staff member and time slot");
       return;
     }
+
+    const updated = staffData.map((s) => {
+      if (s.id !== selectedStaff) return s;
+
+      return {
+        ...s,
+        slots: s.slots.map((slot) =>
+          slot.time === selectedSlot ? { ...slot, taken: true } : slot
+        ),
+      };
+    });
+
+    setStaffData(updated);
 
     console.log("Appointment booked:", {
       staff: selectedStaff,
@@ -33,41 +49,25 @@ export default function NewReservation() {
     });
 
     alert("Appointment added (mock)");
+
+    setSelectedStaff(null);
+    setSelectedSlot(null);
+    setClientName("");
+    setClientSurname("");
+    setClientPhone("");
+    setNotes("");
   }
 
   return (
     <div className="reservation-container">
       <h1 className="header">Add appointment</h1>
 
-      <div className="staff-section">
-        {staffData.map((staff) => (
-          <div key={staff.id} className="staff-column">
-            <h2>{staff.name}</h2>
-
-            <div className="slot-list">
-              {staff.slots.map((slot) => {
-                const isSelected = selectedStaff === staff.id && selectedSlot === slot.time;
-
-                return (
-                  <button
-                    key={slot.time}
-                    className={
-                      slot.taken
-                        ? "slot taken"
-                        : isSelected
-                        ? "slot selected"
-                        : "slot"
-                    }
-                    onClick={() => handleSlotSelect(staff.id, slot.time, slot.taken)}
-                  >
-                    {slot.time}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
+      <TimeSlotSelector
+        staff={staffData}
+        selectedStaff={selectedStaff}
+        selectedSlot={selectedSlot}
+        onSelect={handleSlotSelect}
+      />
 
       <div className="client-info">
         <label>
@@ -77,12 +77,18 @@ export default function NewReservation() {
 
         <label>
           Surname:
-          <input value={clientSurname} onChange={(e) => setClientSurname(e.target.value)} />
+          <input
+            value={clientSurname}
+            onChange={(e) => setClientSurname(e.target.value)}
+          />
         </label>
 
         <label>
           Phone number:
-          <input value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} />
+          <input
+            value={clientPhone}
+            onChange={(e) => setClientPhone(e.target.value)}
+          />
         </label>
       </div>
 
@@ -104,4 +110,3 @@ export default function NewReservation() {
     </div>
   );
 }
-
