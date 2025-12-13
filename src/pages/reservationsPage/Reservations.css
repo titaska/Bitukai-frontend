@@ -21,7 +21,7 @@
   color: #5A5883;
 }
 
-.fc .fc-dayGridDay-button,
+.fc .fc-timeGridDay-button,
 .fc .fc-dayGridWeek-button,
 .fc .fc-dayGridMonth-button {
   background-color: white !important;
@@ -33,7 +33,7 @@
   text-transform: capitalize;
 }
 
-.fc .fc-button-active.fc-dayGridDay-button,
+.fc .fc-button-active.fc-timeGridDay-button,
 .fc .fc-button-active.fc-dayGridWeek-button,
 .fc .fc-button-active.fc-dayGridMonth-button {
   background-color: #B3B0C8 !important;
@@ -44,9 +44,9 @@
 .fc .fc-addAppointmentButton-button {
   background-color: #5A5883;
   color: white;
-  border-radius: 25px;
+  border-radius: 25px !important;
   padding: 6px 16px;
-  margin-left: 8px;
+  margin-left: 8px !important;
   font-weight: 500;
 }
 
