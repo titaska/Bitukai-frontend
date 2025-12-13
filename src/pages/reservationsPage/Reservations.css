@@ -82,3 +82,15 @@
 .fc .fc-daygrid-day.fc-day-today {
   background-color: #dad8e6;
 }
+
+.fc .fc-timegrid-col.fc-day-today {
+  background-color: #dad8e6 !important;
+}
+
+.fc .fc-timegrid-slot {
+  border-color: #5A5883 !important;
+}
+
+.fc .fc-timegrid-slot.fc-day-today {
+  background-color: #dad8e6;
+}
