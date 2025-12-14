@@ -14,27 +14,27 @@ import { useNavigate } from "react-router-dom";
 import { StaffDto, StaffCreate } from "../../types/staff";
 import StaffFormModal from "../../components/StaffFormModal";
 import { staffApi } from "../../services/staffApi";
+import { staffServicesApi } from "../../services/staffServicesApi";
 
 const formatDate = (value: any): string => {
   if (!value) return "";
-  // jei ateina ISO string: "2025-01-01T00:00:00Z" arba "2025-01-01"
   if (typeof value === "string") return value.split("T")[0];
-  // jei kažkaip ateitų Date objektas
   if (value instanceof Date) return value.toISOString().slice(0, 10);
   return String(value).split("T")[0];
 };
 
 const getErrorMessage = async (e: any): Promise<string> => {
-  // jei staffApi meta Error su tekstu - parodykim jį
   if (e?.message) return e.message;
   return "Unknown error";
 };
 
 const StaffListPage: React.FC = () => {
   const [staff, setStaff] = useState<StaffDto[]>([]);
+  const [servicesMap, setServicesMap] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
   const [openModal, setOpenModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   const navigate = useNavigate();
 
   const load = async () => {
@@ -42,14 +42,28 @@ const StaffListPage: React.FC = () => {
       setLoading(true);
       setError(null);
 
+      // 1) staff list
       const data = await staffApi.getAll();
-
       const normalized = data.map((s) => ({
         ...s,
         hireDate: formatDate(s.hireDate),
       }));
-
       setStaff(normalized);
+
+      // 2) services per staff (staffId -> "name1, name2")
+      const entries = await Promise.all(
+        normalized.map(async (m) => {
+          try {
+            const svcs = await staffServicesApi.getByStaffId(m.staffId);
+            const names = svcs.map((x) => x.name).filter(Boolean);
+            return [m.staffId, names.length ? names.join(", ") : "—"] as const;
+          } catch {
+            return [m.staffId, "—"] as const;
+          }
+        })
+      );
+
+      setServicesMap(Object.fromEntries(entries));
     } catch (e: any) {
       console.error(e);
       setError(await getErrorMessage(e));
@@ -59,31 +73,8 @@ const StaffListPage: React.FC = () => {
   };
 
   useEffect(() => {
-    let mounted = true;
-
-    (async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const data = await staffApi.getAll();
-        const normalized = data.map((s) => ({
-          ...s,
-          hireDate: formatDate(s.hireDate),
-        }));
-
-        if (mounted) setStaff(normalized);
-      } catch (e: any) {
-        console.error(e);
-        if (mounted) setError(await getErrorMessage(e));
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    })();
-
-    return () => {
-      mounted = false;
-    };
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSaveNew = async (dto: StaffCreate) => {
@@ -156,7 +147,7 @@ const StaffListPage: React.FC = () => {
                     </Button>
                   </TableCell>
 
-                  <TableCell>—</TableCell>
+                  <TableCell>{servicesMap[member.staffId] ?? "—"}</TableCell>
 
                   <TableCell>{formatDate(member.hireDate)}</TableCell>
 

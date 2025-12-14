@@ -15,22 +15,37 @@ import {
   Typography,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+
 import { ServiceConfig, ServiceCreateUpdate } from "../types/service";
-// import { mockConfigService } from "../mock/mockConfigService";
 import ServiceFormModal from "../components/ServiceFormModal";
 import { serviceApi } from "../services/serviceApi";
 
+import { TaxDto } from "../types/tax";
+import TaxFormModal from "../components/TaxFormModal";
+import { taxApi } from "../services/taxApi";
+
 const ConfigurationPage: React.FC = () => {
+  // ===== SERVICES =====
   const [services, setServices] = useState<ServiceConfig[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingService, setEditingService] =
-    useState<ServiceConfig | null>(null);
+  const [servicesLoading, setServicesLoading] = useState(true);
+  const [serviceModalOpen, setServiceModalOpen] = useState(false);
+  const [editingService, setEditingService] = useState<ServiceConfig | null>(
+    null
+  );
+
+  // ===== TAXES =====
+  const [taxes, setTaxes] = useState<TaxDto[]>([]);
+  const [taxesLoading, setTaxesLoading] = useState(true);
+  const [taxModalOpen, setTaxModalOpen] = useState(false);
+  const [editingTax, setEditingTax] = useState<TaxDto | null>(null);
+
+  // ===== COMMON ERROR =====
   const [error, setError] = useState<string | null>(null);
 
+  // ===== LOADERS =====
   const loadServices = async () => {
     try {
-      setLoading(true);
+      setServicesLoading(true);
       setError(null);
       const data = await serviceApi.getAll();
       setServices(data);
@@ -38,36 +53,50 @@ const ConfigurationPage: React.FC = () => {
       console.error(e);
       setError("Failed to load services");
     } finally {
-      setLoading(false);
+      setServicesLoading(false);
+    }
+  };
+
+  const loadTaxes = async () => {
+    try {
+      setTaxesLoading(true);
+      setError(null);
+      const data = await taxApi.getAll();
+      setTaxes(data);
+    } catch (e: any) {
+      console.error(e);
+      setError("Failed to load taxes");
+    } finally {
+      setTaxesLoading(false);
     }
   };
 
   useEffect(() => {
     loadServices();
+    loadTaxes();
   }, []);
 
-  const handleOpenNew = () => {
+  // ===== SERVICES HANDLERS =====
+  const handleOpenNewService = () => {
     setEditingService(null);
-    setModalOpen(true);
+    setServiceModalOpen(true);
   };
 
-  const handleOpenEdit = (service: ServiceConfig) => {
+  const handleOpenEditService = (service: ServiceConfig) => {
     setEditingService(service);
-    setModalOpen(true);
+    setServiceModalOpen(true);
   };
 
-  const handleSave = async (
+  const handleSaveService = async (
     dto: ServiceCreateUpdate,
     idToUpdate?: number
   ) => {
     try {
       setError(null);
-      if (idToUpdate) {
-        await serviceApi.update(idToUpdate, dto);
-      } else {
-        await serviceApi.create(dto);
-      }
-      setModalOpen(false);
+      if (idToUpdate) await serviceApi.update(idToUpdate, dto);
+      else await serviceApi.create(dto);
+
+      setServiceModalOpen(false);
       await loadServices();
     } catch (e: any) {
       console.error(e);
@@ -75,7 +104,7 @@ const ConfigurationPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDeleteService = async (id: number) => {
     try {
       setError(null);
       await serviceApi.delete(id);
@@ -86,8 +115,53 @@ const ConfigurationPage: React.FC = () => {
     }
   };
 
-  const [showAll, setShowAll] = useState(false);
-  const visibleServices = showAll ? services : services.slice(0, 3);
+  // ===== TAXES HANDLERS =====
+  const handleOpenNewTax = () => {
+    setEditingTax(null);
+    setTaxModalOpen(true);
+  };
+
+  const handleOpenEditTax = (tax: TaxDto) => {
+    setEditingTax(tax);
+    setTaxModalOpen(true);
+  };
+
+  // TaxFormModal onSave paduoda (data, idToUpdate?)
+  const handleSaveTax = async (dto: any, idToUpdate?: string) => {
+    try {
+      setError(null);
+
+      if (idToUpdate) {
+        await taxApi.update(idToUpdate, dto);
+      } else {
+        await taxApi.create(dto);
+      }
+
+      setTaxModalOpen(false);
+      await loadTaxes();
+    } catch (e: any) {
+      console.error(e);
+      setError("Failed to save tax");
+    }
+  };
+
+  const handleDeleteTax = async (id: string) => {
+    try {
+      setError(null);
+      await taxApi.delete(id);
+      await loadTaxes();
+    } catch (e: any) {
+      console.error(e);
+      setError("Failed to delete tax");
+    }
+  };
+
+  // ===== UI HELPERS =====
+  const [showAllServices, setShowAllServices] = useState(false);
+  const visibleServices = showAllServices ? services : services.slice(0, 3);
+
+  const [showAllTaxes, setShowAllTaxes] = useState(false);
+  const visibleTaxes = showAllTaxes ? taxes : taxes.slice(0, 3);
 
   return (
     <Box p={3}>
@@ -101,6 +175,7 @@ const ConfigurationPage: React.FC = () => {
         </Box>
       )}
 
+      {/* ===================== SERVICES ===================== */}
       <Accordion defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Typography variant="h6">Services</Typography>
@@ -108,12 +183,12 @@ const ConfigurationPage: React.FC = () => {
         <AccordionDetails>
           <Box display="flex" justifyContent="space-between" mb={2}>
             <Typography variant="subtitle1">Services</Typography>
-            <Button variant="contained" onClick={handleOpenNew}>
+            <Button variant="contained" onClick={handleOpenNewService}>
               Add New
             </Button>
           </Box>
 
-          {loading ? (
+          {servicesLoading ? (
             <Typography>Loading...</Typography>
           ) : (
             <Paper>
@@ -129,18 +204,15 @@ const ConfigurationPage: React.FC = () => {
                   {visibleServices.map((s) => (
                     <TableRow key={s.id}>
                       <TableCell>{s.name}</TableCell>
-                      <TableCell>{s.price.toFixed(2)} $</TableCell>
+                      <TableCell>{Number(s.price).toFixed(2)} $</TableCell>
                       <TableCell align="right">
-                        <Button
-                          size="small"
-                          onClick={() => handleOpenEdit(s)}
-                        >
+                        <Button size="small" onClick={() => handleOpenEditService(s)}>
                           Edit Details
                         </Button>
                         <Button
                           size="small"
                           color="error"
-                          onClick={() => handleDelete(s.id)}
+                          onClick={() => handleDeleteService(s.id)}
                         >
                           Delete
                         </Button>
@@ -150,14 +222,20 @@ const ConfigurationPage: React.FC = () => {
 
                   {services.length > 3 && (
                     <TableRow>
-                      <TableCell colSpan={4} align="center">
+                      <TableCell colSpan={3} align="center">
                         <Button
                           size="small"
-                          onClick={() => setShowAll((prev) => !prev)}
+                          onClick={() => setShowAllServices((prev) => !prev)}
                         >
-                          {showAll ? "View less" : "View more"}
+                          {showAllServices ? "View less" : "View more"}
                         </Button>
                       </TableCell>
+                    </TableRow>
+                  )}
+
+                  {services.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={3}>No services found.</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
@@ -167,46 +245,122 @@ const ConfigurationPage: React.FC = () => {
         </AccordionDetails>
       </Accordion>
 
-      {/* TAXES SECTION (placeholder) */}
+      {/* ===================== TAXES ===================== */}
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography>Taxes</Typography>
+          <Typography variant="h6">Taxes</Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <Typography>Taxes configuration (mock placeholder).</Typography>
+          <Box display="flex" justifyContent="space-between" mb={2}>
+            <Typography variant="subtitle1">Taxes</Typography>
+            <Button variant="contained" onClick={handleOpenNewTax}>
+              Add New
+            </Button>
+          </Box>
+
+          {taxesLoading ? (
+            <Typography>Loading...</Typography>
+          ) : (
+            <Paper>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Name</TableCell>
+                    <TableCell>Description</TableCell>
+                    <TableCell>Percentage</TableCell>
+                    <TableCell align="right" />
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {visibleTaxes.map((t) => (
+                    <TableRow key={t.id}>
+                      <TableCell>{t.name}</TableCell>
+                      <TableCell>{t.description ?? "-"}</TableCell>
+                      <TableCell>{Number(t.percentage).toFixed(2)} %</TableCell>
+                      <TableCell align="right">
+                        <Button size="small" onClick={() => handleOpenEditTax(t)}>
+                          Edit Details
+                        </Button>
+                        <Button
+                          size="small"
+                          color="error"
+                          onClick={() => handleDeleteTax(t.id)}
+                        >
+                          Delete
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+
+                  {taxes.length > 3 && (
+                    <TableRow>
+                      <TableCell colSpan={4} align="center">
+                        <Button
+                          size="small"
+                          onClick={() => setShowAllTaxes((prev) => !prev)}
+                        >
+                          {showAllTaxes ? "View less" : "View more"}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  )}
+
+                  {taxes.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={4}>No taxes found.</TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </Paper>
+          )}
         </AccordionDetails>
       </Accordion>
 
-      {/* DISCOUNTS SECTION (placeholder) */}
+      {/* ===================== DISCOUNTS (placeholder) ===================== */}
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Typography>Discounts</Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <Typography>Discounts configuration (mock placeholder).</Typography>
+          <Typography>Discounts configuration (placeholder).</Typography>
         </AccordionDetails>
       </Accordion>
 
-      {/* INVENTORY SECTION (placeholder) */}
+      {/* ===================== INVENTORY (placeholder) ===================== */}
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Typography>Inventory</Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <Typography>Inventory configuration (mock placeholder).</Typography>
+          <Typography>Inventory configuration (placeholder).</Typography>
         </AccordionDetails>
       </Accordion>
 
+      {/* ===================== MODALS ===================== */}
       <ServiceFormModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSave={handleSave}
+        open={serviceModalOpen}
+        onClose={() => setServiceModalOpen(false)}
+        onSave={handleSaveService}
         editingId={editingService?.id ?? null}
         initialData={
           editingService
+            ? { name: editingService.name, price: editingService.price }
+            : null
+        }
+      />
+
+      <TaxFormModal
+        open={taxModalOpen}
+        onClose={() => setTaxModalOpen(false)}
+        onSave={handleSaveTax}
+        editingId={editingTax?.id ?? null}
+        initialData={
+          editingTax
             ? {
-                name: editingService.name,
-                price: editingService.price,
+                name: editingTax.name,
+                description: editingTax.description ?? null,
+                percentage: editingTax.percentage,
               }
             : null
         }
