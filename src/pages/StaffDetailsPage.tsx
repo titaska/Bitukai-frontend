@@ -21,13 +21,13 @@ import {
   InputLabel,
 } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
-import { StaffDto, StaffUpdate } from "../../types/staff";
-import { staffApi } from "../../services/staffApi";
+import { StaffDto, StaffUpdate } from "../types/staff";
+import { staffApi } from "../services/staffApi";
 import {
   staffServicesApi,
   StaffPerformedService,
   ServiceOption,
-} from "../../services/staffServicesApi";
+} from "../services/staffServicesApi";
 
 const formatDate = (iso: string | undefined | null): string => {
   if (!iso) return "";

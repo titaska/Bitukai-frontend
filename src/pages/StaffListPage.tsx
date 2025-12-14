@@ -11,10 +11,10 @@ import {
   Paper,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { StaffDto, StaffCreate } from "../../types/staff";
-import StaffFormModal from "../../components/StaffFormModal";
-import { staffApi } from "../../services/staffApi";
-import { staffServicesApi } from "../../services/staffServicesApi";
+import { StaffDto, StaffCreate } from "../types/staff";
+import StaffFormModal from "../components/StaffFormModal";
+import { staffApi } from "../services/staffApi";
+import { staffServicesApi } from "../services/staffServicesApi";
 
 const formatDate = (value: any): string => {
   if (!value) return "";
