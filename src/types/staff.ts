@@ -22,12 +22,12 @@ export enum StaffStatus {
   }
   
   export interface StaffCreate {
-    registrationNumber: string;
     status: StaffStatus;
     firstName: string;
     lastName: string;
     email: string;
     phoneNumber: string;
+    passwordHash: string;
     role: StaffRole;
     hireDate: string;
   }
@@ -38,6 +38,7 @@ export enum StaffStatus {
     lastName: string;
     email: string;
     phoneNumber: string;
+    passwordHash?: string | null;
     role: StaffRole;
     hireDate: string;
   }

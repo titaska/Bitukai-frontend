@@ -26,18 +26,22 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [hireDate, setHireDate] = useState("2024-12-11");
+  const [hireDate, setHireDate] = useState(
+    () => new Date().toISOString().slice(0, 10) // šiandienos data, "YYYY-MM-DD"
+  );
+  const [password, setPassword] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const payload: StaffCreate = {
-      registrationNumber: "REG-001",
       status: StaffStatus.ACTIVE,
       firstName,
       lastName,
       email,
       phoneNumber,
+      // kol kas siunčiam paprastą tekstą, backend turi susitvarkyti / užhashinti
+      passwordHash: password,
       role: StaffRole.STAFF,
       hireDate,
     };
@@ -50,6 +54,7 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({
       <DialogTitle>New staff member details</DialogTitle>
       <form onSubmit={handleSubmit}>
         <DialogContent dividers>
+
           <Box display="flex" gap={2} mb={2}>
             <TextField
               label="First name"
@@ -74,6 +79,17 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({
               fullWidth
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </Box>
+
+          <Box mb={2}>
+            <TextField
+              label="Password"
+              type="password"
+              fullWidth
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               required
             />
           </Box>

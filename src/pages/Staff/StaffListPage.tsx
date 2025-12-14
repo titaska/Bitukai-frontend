@@ -11,36 +11,108 @@ import {
   Paper,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { StaffDto } from "../../types/staff";
-import { mockStaffService } from "../../mock/Staff/mockStaffService";
-import StaffFormModal from "../../components/StaffFormModal"; // 👈 ČIA SVARBU
+import { StaffDto, StaffCreate } from "../../types/staff";
+import StaffFormModal from "../../components/StaffFormModal";
+import { staffApi } from "../../services/staffApi";
+
+const formatDate = (value: any): string => {
+  if (!value) return "";
+  // jei ateina ISO string: "2025-01-01T00:00:00Z" arba "2025-01-01"
+  if (typeof value === "string") return value.split("T")[0];
+  // jei kažkaip ateitų Date objektas
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  return String(value).split("T")[0];
+};
+
+const getErrorMessage = async (e: any): Promise<string> => {
+  // jei staffApi meta Error su tekstu - parodykim jį
+  if (e?.message) return e.message;
+  return "Unknown error";
+};
 
 const StaffListPage: React.FC = () => {
   const [staff, setStaff] = useState<StaffDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [openModal, setOpenModal] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const load = async () => {
-    setLoading(true);
-    const data = await mockStaffService.getAll();
-    setStaff(data);
-    setLoading(false);
+    try {
+      setLoading(true);
+      setError(null);
+
+      const data = await staffApi.getAll();
+
+      const normalized = data.map((s) => ({
+        ...s,
+        hireDate: formatDate(s.hireDate),
+      }));
+
+      setStaff(normalized);
+    } catch (e: any) {
+      console.error(e);
+      setError(await getErrorMessage(e));
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    load();
+    let mounted = true;
+
+    (async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const data = await staffApi.getAll();
+        const normalized = data.map((s) => ({
+          ...s,
+          hireDate: formatDate(s.hireDate),
+        }));
+
+        if (mounted) setStaff(normalized);
+      } catch (e: any) {
+        console.error(e);
+        if (mounted) setError(await getErrorMessage(e));
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  const handleSaveNew = async (dto: any) => {
-    await mockStaffService.create(dto);
-    await load();
-    setOpenModal(false);
+  const handleSaveNew = async (dto: StaffCreate) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      await staffApi.create(dto);
+      setOpenModal(false);
+      await load();
+    } catch (e: any) {
+      console.error(e);
+      setError(await getErrorMessage(e));
+      setLoading(false);
+    }
   };
 
   const handleDelete = async (id: number) => {
-    await mockStaffService.delete(id);
-    await load();
+    try {
+      setLoading(true);
+      setError(null);
+
+      await staffApi.delete(id);
+      await load();
+    } catch (e: any) {
+      console.error(e);
+      setError(await getErrorMessage(e));
+      setLoading(false);
+    }
   };
 
   return (
@@ -51,6 +123,12 @@ const StaffListPage: React.FC = () => {
           Add New
         </Button>
       </Box>
+
+      {error && (
+        <Box mb={2}>
+          <Typography color="error">{error}</Typography>
+        </Box>
+      )}
 
       {loading ? (
         <Typography>Loading...</Typography>
@@ -65,6 +143,7 @@ const StaffListPage: React.FC = () => {
                 <TableCell align="right" />
               </TableRow>
             </TableHead>
+
             <TableBody>
               {staff.map((member) => (
                 <TableRow key={member.staffId}>
@@ -76,8 +155,11 @@ const StaffListPage: React.FC = () => {
                       {member.firstName} {member.lastName}
                     </Button>
                   </TableCell>
-                  <TableCell>Service 1, Service 2 …</TableCell>
-                  <TableCell>{member.hireDate}</TableCell>
+
+                  <TableCell>—</TableCell>
+
+                  <TableCell>{formatDate(member.hireDate)}</TableCell>
+
                   <TableCell align="right">
                     <Button
                       size="small"
@@ -95,6 +177,12 @@ const StaffListPage: React.FC = () => {
                   </TableCell>
                 </TableRow>
               ))}
+
+              {staff.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={4}>No staff members found.</TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </Paper>

@@ -16,8 +16,9 @@ import {
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { ServiceConfig, ServiceCreateUpdate } from "../types/service";
-import { mockConfigService } from "../mock/mockConfigService";
+// import { mockConfigService } from "../mock/mockConfigService";
 import ServiceFormModal from "../components/ServiceFormModal";
+import { serviceApi } from "../services/serviceApi";
 
 const ConfigurationPage: React.FC = () => {
   const [services, setServices] = useState<ServiceConfig[]>([]);
@@ -25,12 +26,20 @@ const ConfigurationPage: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingService, setEditingService] =
     useState<ServiceConfig | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const loadServices = async () => {
-    setLoading(true);
-    const data = await mockConfigService.getAllServices();
-    setServices(data);
-    setLoading(false);
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await serviceApi.getAll();
+      setServices(data);
+    } catch (e: any) {
+      console.error(e);
+      setError("Failed to load services");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -51,21 +60,32 @@ const ConfigurationPage: React.FC = () => {
     dto: ServiceCreateUpdate,
     idToUpdate?: number
   ) => {
-    if (idToUpdate) {
-      await mockConfigService.updateService(idToUpdate, dto);
-    } else {
-      await mockConfigService.createService(dto);
+    try {
+      setError(null);
+      if (idToUpdate) {
+        await serviceApi.update(idToUpdate, dto);
+      } else {
+        await serviceApi.create(dto);
+      }
+      setModalOpen(false);
+      await loadServices();
+    } catch (e: any) {
+      console.error(e);
+      setError("Failed to save service");
     }
-    setModalOpen(false);
-    await loadServices();
   };
 
   const handleDelete = async (id: number) => {
-    await mockConfigService.deleteService(id);
-    await loadServices();
+    try {
+      setError(null);
+      await serviceApi.delete(id);
+      await loadServices();
+    } catch (e: any) {
+      console.error(e);
+      setError("Failed to delete service");
+    }
   };
 
-  // Paprastas „view more“ – rodom max 3, paskui perjungiam
   const [showAll, setShowAll] = useState(false);
   const visibleServices = showAll ? services : services.slice(0, 3);
 
@@ -75,7 +95,12 @@ const ConfigurationPage: React.FC = () => {
         Configuration
       </Typography>
 
-      {/* SERVICES SECTION */}
+      {error && (
+        <Box mb={2}>
+          <Typography color="error">{error}</Typography>
+        </Box>
+      )}
+
       <Accordion defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Typography variant="h6">Services</Typography>
@@ -97,7 +122,6 @@ const ConfigurationPage: React.FC = () => {
                   <TableRow>
                     <TableCell>Name</TableCell>
                     <TableCell>Price</TableCell>
-                    <TableCell>Created on</TableCell>
                     <TableCell align="right" />
                   </TableRow>
                 </TableHead>
@@ -106,7 +130,6 @@ const ConfigurationPage: React.FC = () => {
                     <TableRow key={s.id}>
                       <TableCell>{s.name}</TableCell>
                       <TableCell>{s.price.toFixed(2)} $</TableCell>
-                      <TableCell>{s.createdOn}</TableCell>
                       <TableCell align="right">
                         <Button
                           size="small"
@@ -184,7 +207,6 @@ const ConfigurationPage: React.FC = () => {
             ? {
                 name: editingService.name,
                 price: editingService.price,
-                createdOn: editingService.createdOn,
               }
             : null
         }

@@ -31,28 +31,33 @@ const ServiceFormModal: React.FC<ServiceFormModalProps> = ({
   editingId,
 }) => {
   const [name, setName] = useState("");
-  const [price, setPrice] = useState<string>("1236.23");
-  const [createdOn, setCreatedOn] = useState("2024-12-11");
+  const [price, setPrice] = useState<string>("");
+  const [priceError, setPriceError] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialData) {
       setName(initialData.name);
       setPrice(initialData.price.toString());
-      setCreatedOn(initialData.createdOn);
     } else {
       setName("");
-      setPrice("1236.23");
-      setCreatedOn("2024-12-11");
+      setPrice("");
     }
+    setPriceError(null);
   }, [initialData, open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const numericPrice = Number(price);
+
+    if (Number.isNaN(numericPrice) || numericPrice < 0) {
+      setPriceError("Price must be a non-negative number");
+      return;
+    }
+
     const payload: ServiceCreateUpdate = {
       name,
-      price: Number(price),
-      createdOn,
+      price: numericPrice,
     };
 
     await onSave(payload, editingId ?? undefined);
@@ -78,17 +83,14 @@ const ServiceFormModal: React.FC<ServiceFormModalProps> = ({
               type="number"
               fullWidth
               value={price}
-              onChange={(e) => setPrice(e.target.value)}
+              onChange={(e) => {
+                setPrice(e.target.value);
+                setPriceError(null);
+              }}
               required
-            />
-            <TextField
-              label="Created on"
-              type="date"
-              fullWidth
-              value={createdOn}
-              onChange={(e) => setCreatedOn(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              required
+              inputProps={{ step: "0.01", min: 0 }}
+              error={!!priceError}
+              helperText={priceError ?? ""}
             />
           </Box>
         </DialogContent>

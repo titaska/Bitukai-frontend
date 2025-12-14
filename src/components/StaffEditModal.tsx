@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -27,7 +27,18 @@ const StaffEditModal: React.FC<StaffEditModalProps> = ({
   const [lastName, setLastName] = useState(staff.lastName);
   const [email, setEmail] = useState(staff.email);
   const [phoneNumber, setPhoneNumber] = useState(staff.phoneNumber);
-  const [hireDate, setHireDate] = useState(staff.hireDate);
+  const [hireDate, setHireDate] = useState(
+    staff.hireDate ? staff.hireDate.slice(0, 10) : ""
+  );
+
+  // Kai pasikeičia staff (arba atsidaro tas pats modal su kitu darbuotoju) – atnaujinam formą
+  useEffect(() => {
+    setFirstName(staff.firstName);
+    setLastName(staff.lastName);
+    setEmail(staff.email);
+    setPhoneNumber(staff.phoneNumber);
+    setHireDate(staff.hireDate ? staff.hireDate.slice(0, 10) : "");
+  }, [staff]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,6 +49,7 @@ const StaffEditModal: React.FC<StaffEditModalProps> = ({
       lastName,
       email,
       phoneNumber,
+      passwordHash: null, // slaptažodžio nekeičiam, backend turi ignoruoti null
       role: staff.role ?? StaffRole.STAFF,
       hireDate,
     };
