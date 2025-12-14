@@ -1,32 +1,22 @@
 const API_BASE = "http://localhost:5089/api";
 
-export interface CreateReservationRequest {
-  registrationNumber: string;
-  serviceProductId: string;
-  employeeId: string;
-  startTime: string; // ISO string
-  durationMinutes: number;
-  clientName: string;
-  clientSurname: string;
-  clientPhone: string;
-  notes?: string;
-}
-
-export async function createReservation(
-  data: CreateReservationRequest
-) {
-  const response = await fetch(`${API_BASE}/reservations`, {
+export async function createReservation(payload: any) {
+  const res = await fetch(`${API_BASE}/reservations`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
   });
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(error);
-  }
-
-  return response.json();
+  if (!res.ok) throw new Error("Failed to create reservation");
+  return res.json();
 }
+
+export async function getTakenSlots(employeeId: string, date: string) {
+  const res = await fetch(
+    `${API_BASE}/reservations/availability?employeeId=${employeeId}&date=${date}`
+  );
+
+  if (!res.ok) throw new Error("Failed to fetch availability");
+  return res.json(); // DateTime[]
+}
+

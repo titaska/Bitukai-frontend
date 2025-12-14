@@ -1,167 +1,293 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./NewReservation.css";
-import { staffData } from "../mock/staff";
-import { createReservation } from "../api/ReservationsApi";
+
+const API_BASE = "http://localhost:5089/api";
+
+/* ================= TYPES ================= */
+
+interface Business {
+  registrationNumber: string;
+  name: string;
+  location: string;
+}
+
+interface Staff {
+  staffId: string;
+  firstName: string;
+  lastName: string;
+}
+
+interface Product {
+  productId: string;
+  name: string;
+  durationMinutes: number;
+}
+
+/* ================= COMPONENT ================= */
 
 export default function NewReservation() {
-  // top controls
-  const [location, setLocation] = useState("Location 1");
-  const [selectedService, setSelectedService] = useState("HAIRCUT");
-  const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
+  /* ---------- DATA ---------- */
+  const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [staff, setStaff] = useState<Staff[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
 
-  // slot selection
-  const [selectedStaff, setSelectedStaff] = useState<number | null>(null);
-  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  /* ---------- SELECTIONS ---------- */
+  const [selectedBusiness, setSelectedBusiness] = useState("");
+  const [selectedStaff, setSelectedStaff] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedDate, setSelectedDate] = useState("");
 
-  // client info
+  /* ---------- TIME ---------- */
+  const [takenSlots, setTakenSlots] = useState<string[]>([]);
+  const [selectedTime, setSelectedTime] = useState("");
+
+  /* ---------- CLIENT ---------- */
   const [clientName, setClientName] = useState("");
   const [clientSurname, setClientSurname] = useState("");
   const [clientPhone, setClientPhone] = useState("");
   const [notes, setNotes] = useState("");
 
-  function handleSlotSelect(staffId: number, slotTime: string, taken: boolean) {
-    if (taken) return;
-    setSelectedStaff(staffId);
-    setSelectedSlot(slotTime);
+  /* ================= FETCH LOCATIONS ================= */
+
+  useEffect(() => {
+    fetch(`${API_BASE}/business`)
+      .then(res => res.json())
+      .then(data => setBusinesses(Array.isArray(data) ? data : []))
+      .catch(console.error);
+  }, []);
+
+  /* ================= FETCH STAFF ================= */
+
+  useEffect(() => {
+    fetch(`${API_BASE}/staff`)
+      .then(res => res.json())
+      .then(data => setStaff(Array.isArray(data) ? data : []))
+      .catch(console.error);
+  }, []);
+
+  /* ================= FETCH SERVICES ================= */
+
+  useEffect(() => {
+    fetch(`${API_BASE}/products`)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data.data)) {
+          setProducts(data.data);
+        } else {
+          setProducts([]);
+        }
+      })
+      .catch(console.error);
+  }, []);
+
+  /* ================= FETCH TAKEN SLOTS ================= */
+
+  useEffect(() => {
+    if (!selectedStaff || !selectedDate) return;
+
+    fetch(
+      `${API_BASE}/reservations/availability?employeeId=${selectedStaff}&date=${selectedDate}`
+    )
+      .then(res => res.json())
+      .then((data: string[]) => {
+        // normalize to YYYY-MM-DDTHH:mm:00
+        const normalized = data.map(d => d.substring(0, 19));
+        setTakenSlots(normalized);
+      })
+      .catch(console.error);
+  }, [selectedStaff, selectedDate]);
+
+  /* ================= SLOT GENERATION ================= */
+
+  function generateSlots(): string[] {
+    if (!selectedProduct) return [];
+
+    const slots: string[] = [];
+    const startMinutes = 9 * 60;
+    const endMinutes = 18 * 60;
+    const step = selectedProduct.durationMinutes;
+
+    let current = startMinutes;
+
+    while (current + step <= endMinutes) {
+      const h1 = Math.floor(current / 60);
+      const m1 = current % 60;
+      const h2 = Math.floor((current + step) / 60);
+      const m2 = (current + step) % 60;
+
+      slots.push(
+        `${h1.toString().padStart(2, "0")}:${m1
+          .toString()
+          .padStart(2, "0")} - ${h2
+          .toString()
+          .padStart(2, "0")}:${m2.toString().padStart(2, "0")}`
+      );
+
+      current += step;
+    }
+
+    return slots;
   }
 
+  function isSlotTaken(slot: string): boolean {
+    if (!selectedDate) return false;
+
+    const start = slot.split(" - ")[0];
+    const iso = `${selectedDate}T${start}:00`;
+
+    return takenSlots.includes(iso);
+  }
+
+  /* ================= SUBMIT ================= */
+
   async function handleSubmit() {
-    if (!selectedStaff || !selectedSlot) {
-      alert("Please select a staff member and time slot");
+    if (
+      !selectedBusiness ||
+      !selectedStaff ||
+      !selectedProduct ||
+      !selectedDate ||
+      !selectedTime
+    ) {
+      alert("Please fill all required fields");
       return;
     }
 
-    try {
-      await createReservation({
-        registrationNumber: "123456789", // mock business for now
-        serviceProductId: selectedService,
-        employeeId: selectedStaff.toString(),
-        startTime: new Date(
-          `${selectedDate} ${selectedSlot.split(" - ")[0]}`
-        ).toISOString(),
-        durationMinutes: 30,
+    const startTime = new Date(
+      `${selectedDate}T${selectedTime.split(" - ")[0]}:00`
+    ).toISOString();
+
+    const res = await fetch(`${API_BASE}/reservations`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        registrationNumber: selectedBusiness,
+        employeeId: selectedStaff,
+        serviceProductId: selectedProduct.productId,
+        startTime,
+        durationMinutes: selectedProduct.durationMinutes,
         clientName,
         clientSurname,
         clientPhone,
         notes,
-      });
+      }),
+    });
 
-      alert("Appointment added");
-    } catch (err: any) {
-      console.error(err);
+    if (!res.ok) {
       alert("Failed to add appointment");
+      return;
     }
+
+    alert("Appointment created");
+    setSelectedTime("");
+
+    // refresh taken slots
+    const refreshed = await fetch(
+      `${API_BASE}/reservations/availability?employeeId=${selectedStaff}&date=${selectedDate}`
+    ).then(r => r.json());
+
+    setTakenSlots(refreshed.map((d: string) => d.substring(0, 19)));
   }
+
+  /* ================= RENDER ================= */
 
   return (
     <div className="reservation-container">
-      <h1 className="header">Add appointment</h1>
+      <h1>Add appointment</h1>
 
-      {/* TOP FILTERS */}
-      <div className="top-controls">
-        <select value={location} onChange={(e) => setLocation(e.target.value)}>
-          <option>Location 1</option>
-          <option>Location 2</option>
-          <option>Location 3</option>
+      <div className="selectors">
+        <select
+          value={selectedBusiness}
+          onChange={e => setSelectedBusiness(e.target.value)}
+        >
+          <option value="">Select location</option>
+          {businesses.map(b => (
+            <option key={b.registrationNumber} value={b.registrationNumber}>
+              {b.name} ({b.location})
+            </option>
+          ))}
         </select>
 
         <select
-          value={selectedService}
-          onChange={(e) => setSelectedService(e.target.value)}
+          onChange={e =>
+            setSelectedProduct(
+              products.find(p => p.productId === e.target.value) || null
+            )
+          }
         >
-          <option value="HAIRCUT">Haircut</option>
-          <option value="MASSAGE">Massage</option>
-          <option value="BROWS">Brows</option>
+          <option value="">Select service</option>
+          {products.map(p => (
+            <option key={p.productId} value={p.productId}>
+              {p.name} ({p.durationMinutes} min)
+            </option>
+          ))}
         </select>
 
         <input
           type="date"
           value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
+          onChange={e => setSelectedDate(e.target.value)}
         />
       </div>
 
-      {/* STAFF + TIME SLOTS */}
-      <div className="staff-section">
-        {staffData.map((staff) => (
-          <div key={staff.id} className="staff-column">
-            <h2>{staff.name}</h2>
-
-            <div className="slot-list">
-              {staff.slots.map((slot) => {
-                const isSelected =
-                  selectedStaff === staff.id &&
-                  selectedSlot === slot.time;
-
-                return (
-                  <button
-                    key={slot.time}
-                    className={
-                      slot.taken
-                        ? "slot taken"
-                        : isSelected
-                        ? "slot selected"
-                        : "slot"
-                    }
-                    onClick={() =>
-                      handleSlotSelect(staff.id, slot.time, slot.taken)
-                    }
-                  >
-                    {slot.time}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+      <select
+        value={selectedStaff}
+        onChange={e => setSelectedStaff(e.target.value)}
+      >
+        <option value="">Select staff</option>
+        {staff.map(s => (
+          <option key={s.staffId} value={s.staffId}>
+            {s.firstName} {s.lastName}
+          </option>
         ))}
+      </select>
+
+      <div className="slot-list">
+        {generateSlots().map(slot => {
+          const taken = isSlotTaken(slot);
+          const selected = selectedTime === slot;
+
+          return (
+            <button
+              key={slot}
+              disabled={taken}
+              className={`slot ${taken ? "taken" : ""} ${
+                selected ? "selected" : ""
+              }`}
+              onClick={() => setSelectedTime(slot)}
+            >
+              {slot}
+            </button>
+          );
+        })}
       </div>
 
-      {/* CLIENT INFO */}
       <div className="client-info">
-        <label>
-          Name:
-          <input
-            value={clientName}
-            onChange={(e) => setClientName(e.target.value)}
-          />
-        </label>
-
-        <label>
-          Surname:
-          <input
-            value={clientSurname}
-            onChange={(e) => setClientSurname(e.target.value)}
-          />
-        </label>
-
-        <label>
-          Phone number:
-          <input
-            value={clientPhone}
-            onChange={(e) => setClientPhone(e.target.value)}
-          />
-        </label>
-      </div>
-
-      {/* NOTES */}
-      <div className="notes-section">
-        <label>Notes:</label>
-        <textarea
-          className="notes-box"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
+        <input
+          placeholder="Name"
+          value={clientName}
+          onChange={e => setClientName(e.target.value)}
+        />
+        <input
+          placeholder="Surname"
+          value={clientSurname}
+          onChange={e => setClientSurname(e.target.value)}
+        />
+        <input
+          placeholder="Phone"
+          value={clientPhone}
+          onChange={e => setClientPhone(e.target.value)}
         />
       </div>
 
-      {/* ACTIONS */}
-      <div className="submit-container">
-        <button className="cancel-btn">Cancel</button>
-        <button className="submit-btn" onClick={handleSubmit}>
-          Add appointment
-        </button>
-      </div>
+      <textarea
+        placeholder="Notes"
+        value={notes}
+        onChange={e => setNotes(e.target.value)}
+      />
+
+      <button className="submit-btn" onClick={handleSubmit}>
+        Add appointment
+      </button>
     </div>
   );
 }
