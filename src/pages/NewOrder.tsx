@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./NewOrder.css";
 import { ProductDto } from "../types/ProductDto";
 import { useNavigate } from "react-router-dom";
