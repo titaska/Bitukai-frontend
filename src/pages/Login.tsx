@@ -1,9 +1,9 @@
 import { Box, Button, TextField, Typography } from "@mui/material";
 import { ChangeEvent, useState } from "react";
 import { login } from "../hooks/login";
-
+import { StaffRole } from "../types/staff";
 interface LoginProps {
-  onLogin: () => void;
+  onLogin: (staffDto: { registrationNumber: string; role: StaffRole }) => void;
 }
 
 export const Login = ({onLogin}: LoginProps) => {
@@ -30,7 +30,7 @@ export const Login = ({onLogin}: LoginProps) => {
 
     try {
       const staffDto = await login({ email, password });
-      onLogin();
+      onLogin(staffDto);
     } catch (err) {
       console.log("Error: ", err);
       setError("Login failed");

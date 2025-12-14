@@ -1,44 +1,98 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
-import Dashboard from "./pages/Dashboard";
+import Orders from "./pages/Orders";
+import NewOrder from "./pages/NewOrder";
 import Reservations from "./pages/Reservations";
 import NewReservation from "./pages/NewReservation";
 import Staff from "./pages/Staff";
 import Settings from "./pages/Settings";
 import {Login} from "./pages/Login";
-import { useState } from "react";
+import { JSX, useState } from "react";
+import { BusinessType } from "./types/business";
+import { getBusinessByRegNumber } from "./hooks/getBusinessByRegNumber";
+import { StaffRole } from "./types/staff";
+
+function RequireAuth({ isAuthenticated, children }: { isAuthenticated: boolean; children: JSX.Element }) {
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
+}
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [businessType, setBusinessType] = useState<BusinessType>("BEAUTY");
+  const [userRole, setUserRole] = useState<StaffRole>("STAFF");
+
+  const isCatering = businessType === "CATERING";
 
   return (
     <Router>
       <div style={{ display: "flex" }}>
-        {isAuthenticated && <Navbar />}
+        {isAuthenticated && <Navbar businessType={businessType} userRole={userRole} />}
        
         <main style={{ marginLeft: "80px", padding: "20px", width: "100%" }}>
           <Routes>
-            <Route path="/login" element={<Login onLogin={() => setIsAuthenticated(true)}/>} />
+            <Route 
+              path="/login" 
+              element={
+                isAuthenticated ? (
+                  <Navigate to="/" replace />
+                ) : (
+                  <Login
+                    onLogin={async (staffDto) => {
+                      const businessDto = await getBusinessByRegNumber(staffDto.registrationNumber);
+                      setBusinessType(businessDto.type);
+                      setUserRole(staffDto.role);
+                      setIsAuthenticated(true);
+                    }}
+                  />
+                )
+              }
+            />
+            
             <Route
               path="/"
-              element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" replace />}
+              element={
+                <RequireAuth isAuthenticated={isAuthenticated}>
+                  {isCatering ? <Orders /> : <Reservations />}
+                </RequireAuth>
+              }
             />
+
             <Route
-              path="/reservations"
-              element={isAuthenticated ? <Reservations /> : <Navigate to="/login" replace />}
+              path={isCatering ? "/new-order" : "/new-reservation"}
+              element={
+                <RequireAuth isAuthenticated={isAuthenticated}>
+                  {isCatering ? <NewOrder /> : <NewReservation />}
+                </RequireAuth>
+              }
             />
-            <Route
-              path="/new-reservation"
-              element={isAuthenticated ? <NewReservation /> : <Navigate to="/login" replace />}
-            />
+
             <Route
               path="/staff"
-              element={isAuthenticated ? <Staff /> : <Navigate to="/login" replace />}
+              element={
+                <RequireAuth isAuthenticated={isAuthenticated}>
+                  {(userRole === "OWNER" || userRole === "SUPERADMIN") ? (
+                    <Staff />
+                  ) : (
+                    <Navigate to="/" replace />
+                  )}
+                </RequireAuth>
+              }
             />
+
             <Route
               path="/settings"
-              element={isAuthenticated ? <Settings /> : <Navigate to="/login" replace />}
+              element={
+                <RequireAuth isAuthenticated={isAuthenticated}>
+                  {userRole === "SUPERADMIN" ? (
+                    <Settings />
+                  ) : (
+                    <Navigate to="/" replace />
+                  )}
+                </RequireAuth>
+              }
             />
+
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
 

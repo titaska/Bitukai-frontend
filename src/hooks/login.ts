@@ -1,24 +1,10 @@
-import { useMutation } from "@tanstack/react-query";
-import axios from "axios";
+import { API_BASE } from "../constants/api";
+import { StaffDto } from "../types/staff";
 
 interface LoginCredentials {
   email: string;
   password: string;
 }
-
-interface StaffDto {
-  id: string;
-  registrationNumber: string;
-  status: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phoneNumber: string;
-  role: string;
-  hireDate: string;
-}
-
-const API_BASE = "http://localhost:5000/api";
 
 export async function login({ email, password }: LoginCredentials): Promise<StaffDto> {
   const payload = {
