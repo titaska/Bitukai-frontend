@@ -1,28 +1,98 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
-
-import Dashboard from "./pages/Dashboard";
+import Orders from "./pages/Orders";
+import NewOrder from "./pages/NewOrder";
 import Reservations from "./pages/reservationsPage/Reservations";
 import NewReservation from "./pages/NewReservation";
 import Staff from "./pages/Staff";
 import Settings from "./pages/Settings";
+import {Login} from "./pages/Login";
+import { JSX, useState } from "react";
+import { BusinessType } from "./types/business";
+import { getBusinessByRegNumber } from "./hooks/getBusinessByRegNumber";
+import { StaffRole } from "./types/staff";
+
+function RequireAuth({ isAuthenticated, children }: { isAuthenticated: boolean; children: JSX.Element }) {
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
+}
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [businessType, setBusinessType] = useState<BusinessType>("BEAUTY");
+  const [userRole, setUserRole] = useState<StaffRole>("STAFF");
+
+  const isCatering = businessType === "CATERING";
+
   return (
     <Router>
       <div style={{ display: "flex" }}>
-        
+        {isAuthenticated && <Navbar businessType={businessType} userRole={userRole} />}
        
-        <Navbar />
-
-        
-        <main style={{ marginLeft: "80px", width: "100%" }}>
+        <main style={{ marginLeft: "80px", padding: "20px", width: "100%" }}>
           <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/reservations" element={<Reservations />} />
-            <Route path="/new-reservation" element={<NewReservation />} />
-            <Route path="/staff" element={<Staff />} />
-            <Route path="/settings" element={<Settings />} />
+            <Route 
+              path="/login" 
+              element={
+                isAuthenticated ? (
+                  <Navigate to="/" replace />
+                ) : (
+                  <Login
+                    onLogin={async (staffDto) => {
+                      const businessDto = await getBusinessByRegNumber(staffDto.registrationNumber);
+                      setBusinessType(businessDto.type);
+                      setUserRole(staffDto.role);
+                      setIsAuthenticated(true);
+                    }}
+                  />
+                )
+              }
+            />
+            
+            <Route
+              path="/"
+              element={
+                <RequireAuth isAuthenticated={isAuthenticated}>
+                  {isCatering ? <Orders /> : <Reservations />}
+                </RequireAuth>
+              }
+            />
+
+            <Route
+              path={isCatering ? "/new-order" : "/new-reservation"}
+              element={
+                <RequireAuth isAuthenticated={isAuthenticated}>
+                  {isCatering ? <NewOrder /> : <NewReservation />}
+                </RequireAuth>
+              }
+            />
+
+            <Route
+              path="/staff"
+              element={
+                <RequireAuth isAuthenticated={isAuthenticated}>
+                  {(userRole === "OWNER" || userRole === "SUPERADMIN") ? (
+                    <Staff />
+                  ) : (
+                    <Navigate to="/" replace />
+                  )}
+                </RequireAuth>
+              }
+            />
+
+            <Route
+              path="/settings"
+              element={
+                <RequireAuth isAuthenticated={isAuthenticated}>
+                  {userRole === "SUPERADMIN" ? (
+                    <Settings />
+                  ) : (
+                    <Navigate to="/" replace />
+                  )}
+                </RequireAuth>
+              }
+            />
+
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
 
