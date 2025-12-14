@@ -8,18 +8,19 @@ import {
   Settings,
   Users,
   ClipboardPlus,
+  ClipboardList,
   ShoppingCart
 } from "lucide-react";
 
 // TEMPORARY — mock business type
-const businessType: BusinessType = "beauty";
+const businessType: BusinessType = "catering";
 // Change to "catering" to test
 
 export default function Navbar() {
   const cateringLinks = [
     { to: "/",  icon: <Home size={20} /> },
     { to: "/create-order", icon: <ClipboardPlus size={20} /> },
-    { to: "/orders", icon: <ShoppingCart size={20} /> },
+    { to: "/orders", icon: <ClipboardList size={20} /> },
     { to: "/staff", icon: <Users size={20} /> },
     { to: "/settings", icon: <Settings size={20} /> },
   ];

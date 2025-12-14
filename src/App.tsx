@@ -6,6 +6,9 @@ import Reservations from "./pages/Reservations";
 import NewReservation from "./pages/NewReservation";
 import Staff from "./pages/Staff";
 import Settings from "./pages/Settings";
+import NewOrder from "./pages/NewOrder";
+import Orders from "./pages/Orders";
+import EditOrder from "./pages/EditOrder";
 
 export default function App() {
   return (
@@ -23,6 +26,9 @@ export default function App() {
             <Route path="/new-reservation" element={<NewReservation />} />
             <Route path="/staff" element={<Staff />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/create-order" element={<NewOrder />} />
+            <Route path="/orders" element={<Orders />} />
+            <Route path="/edit-order/:orderId" element={<EditOrder />} />
           </Routes>
         </main>
 
