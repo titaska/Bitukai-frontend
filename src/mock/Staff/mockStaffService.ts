@@ -4,7 +4,6 @@ import {
   StaffPerformedService,
 } from "./staffServiceMock";
 
-// Čia laikom tik "performed services" mock duomenis
 let staffServicesData: StaffPerformedService[] = [...initialStaffServicesMock];
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));

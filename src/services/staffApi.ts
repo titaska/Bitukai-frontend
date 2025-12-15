@@ -13,7 +13,6 @@ async function handleJson<T>(res: Response): Promise<T> {
 }
 
 function normalizeStaff(staff: StaffDto): StaffDto {
-  // hireDate be laiko dalies
   return {
     ...staff,
     hireDate: staff.hireDate ? staff.hireDate.split("T")[0] : "",

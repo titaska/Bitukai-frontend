@@ -19,7 +19,7 @@ type BusinessType = "CATERING" | "BEAUTY";
 
 type Props = {
   registrationNumber: string;
-  businessType: BusinessType; // ✅ svarbu
+  businessType: BusinessType; 
 };
 
 type StaffDto = {
@@ -38,7 +38,7 @@ type StaffDto = {
 type ProductDto = {
   productId: string;
   registrationNumber: string;
-  type: "ITEM" | "SERVICE"; // ✅ pagal tavo backend response
+  type: "ITEM" | "SERVICE"; 
   name: string;
   description: string;
   basePrice: number;
@@ -74,11 +74,9 @@ export default function StaffDetailsPage({ registrationNumber, businessType }: P
   const [assigned, setAssigned] = useState<AssignedRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // edit mode
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // form fields
   const [status, setStatus] = useState<"ACTIVE" | "INACTIVE">("ACTIVE");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -86,19 +84,16 @@ export default function StaffDetailsPage({ registrationNumber, businessType }: P
   const [phoneNumber, setPhoneNumber] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
-  // assign modal
   const [assignOpen, setAssignOpen] = useState(false);
   const [options, setOptions] = useState<ProductDto[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("");
 
   const [errorText, setErrorText] = useState<string | null>(null);
 
-  // ✅ CATERING -> ITEM, BEAUTY -> SERVICE
   const allowedType: "ITEM" | "SERVICE" = businessType === "CATERING" ? "ITEM" : "SERVICE";
   const thingLabel = allowedType === "ITEM" ? "Item" : "Service";
   const thingLabelPlural = allowedType === "ITEM" ? "Items" : "Services";
 
-  // ✅ reg number imam iš props ARBA iš staff (jei props būna tuščias)
   const effectiveRegNumber = useMemo(() => {
     return (registrationNumber || staff?.registrationNumber || "").trim();
   }, [registrationNumber, staff?.registrationNumber]);
@@ -112,7 +107,6 @@ export default function StaffDetailsPage({ registrationNumber, businessType }: P
     setNewPassword("");
   }, []);
 
-  // 1) load staff by id
   const loadStaff = useCallback(async () => {
     if (!staffId) return;
 
@@ -129,7 +123,6 @@ export default function StaffDetailsPage({ registrationNumber, businessType }: P
     hydrateFormFromStaff(staffJson);
   }, [staffId, hydrateFormFromStaff]);
 
-  // helper: load products by allowedType
   const loadProducts = useCallback(async (): Promise<ProductDto[]> => {
     if (!effectiveRegNumber) return [];
 
@@ -145,7 +138,6 @@ export default function StaffDetailsPage({ registrationNumber, businessType }: P
     return Array.isArray(data) ? data : [];
   }, [effectiveRegNumber, allowedType]);
 
-  // 2) load assigned (per product -> staff list endpoint)
   const loadAssigned = useCallback(async () => {
     if (!staffId || !effectiveRegNumber) {
       setAssigned([]);
@@ -177,7 +169,6 @@ export default function StaffDetailsPage({ registrationNumber, businessType }: P
     setAssigned(rows);
   }, [staffId, effectiveRegNumber, loadProducts]);
 
-  // 3) load options for dropdown (exclude already assigned)
   const loadOptions = useCallback(async () => {
     if (!effectiveRegNumber) {
       setOptions([]);
@@ -207,13 +198,11 @@ export default function StaffDetailsPage({ registrationNumber, businessType }: P
     loadAll();
   }, [loadAll]);
 
-  // kai tik turim staffId + effectiveRegNumber -> kraunam assigned
   useEffect(() => {
     if (!staffId || !effectiveRegNumber) return;
     loadAssigned().catch((e) => setErrorText(String(e?.message ?? e)));
   }, [staffId, effectiveRegNumber, loadAssigned]);
 
-  // atidarius modalą – pakraunam dropdown options
   useEffect(() => {
     if (!assignOpen) return;
     loadOptions().catch((e) => setErrorText(String(e?.message ?? e)));
@@ -313,7 +302,6 @@ export default function StaffDetailsPage({ registrationNumber, businessType }: P
     await loadAssigned();
   };
 
-  // UI
   if (loading) {
     return (
       <Box sx={{ ml: "80px", p: 3 }}>
@@ -366,7 +354,6 @@ export default function StaffDetailsPage({ registrationNumber, businessType }: P
 
       <Paper sx={{ p: 2, mb: 3 }}>
         <Stack gap={2}>
-          {/* Employed on: visada read-only */}
           <Typography color="text.secondary">
             Employed on: {new Date(staff.hireDate).toLocaleDateString()}
           </Typography>

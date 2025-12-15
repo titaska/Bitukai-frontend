@@ -6,7 +6,6 @@ export type ProductDto = {
   productId: string;
   registrationNumber: string;
 
-  // ✅ UI naudoja productType, bet backend grąžina type -> mes suvienodinam
   productType: ProductType;
 
   name: string;
@@ -38,7 +37,7 @@ export type ProductUpdateDto = {
 };
 
 type ListParams = {
-  registrationNumber: string; // ✅ būtinas
+  registrationNumber: string; 
   type?: ProductType;
   search?: string;
   page?: number;
@@ -51,7 +50,6 @@ function normalizeProductsResponse(json: any): ProductDto[] {
 
   return arr.map((p: any) => ({
     ...p,
-    // ✅ backend: type, frontend: productType
     productType: (p.productType ?? p.type) as ProductType,
   }));
 }
@@ -59,7 +57,6 @@ function normalizeProductsResponse(json: any): ProductDto[] {
 export async function listProducts(params: ListParams): Promise<{ data: ProductDto[]; pagination: any }> {
   const query = new URLSearchParams();
 
-  // ✅ svarbiausia: business filter
   query.set("registrationNumber", params.registrationNumber);
 
   if (params.type) query.set("type", params.type);
@@ -78,7 +75,6 @@ export async function listProducts(params: ListParams): Promise<{ data: ProductD
 }
 
 export async function createProduct(dto: ProductCreateDto): Promise<ProductDto> {
-  // ✅ backend laukia "type", bet tu siunti "productType" — suderinam
   const payload: any = {
     ...dto,
     type: dto.productType,

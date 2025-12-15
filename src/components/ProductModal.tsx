@@ -28,7 +28,6 @@ type Props = {
   registrationNumber: string;
   initial?: ProductDto | null;
 
-  // ✅ ateina iš Settings
   taxes: TaxDto[];
 
   onSubmit: (dto: ProductCreateDto | ProductUpdateDto) => Promise<void>;
@@ -52,7 +51,6 @@ export default function ProductModal({
   const [status, setStatus] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // ✅ Reset/Populate kai atsidaro modalas arba pasikeičia mode/initial
   useEffect(() => {
     if (!open) return;
 
@@ -67,7 +65,6 @@ export default function ProductModal({
       return;
     }
 
-    // create mode reset
     setProductType("SERVICE");
     setName("");
     setDescription("");
@@ -77,7 +74,6 @@ export default function ProductModal({
     setStatus(true);
   }, [open, mode, initial]);
 
-  // ✅ jei CREATE ir turim taxes, parenkam valid taxCode
   useEffect(() => {
     if (!open) return;
     if (mode !== "create") return;
@@ -112,7 +108,7 @@ export default function ProductModal({
           description: description ?? "",
           basePrice: Number(basePrice),
           durationMinutes: durationMinutes === "" ? null : Number(durationMinutes),
-          taxCode: taxCode.trim(), // ✅ pasirinktas tax.name
+          taxCode: taxCode.trim(), 
           status,
         };
         await onSubmit(dto);
@@ -122,7 +118,7 @@ export default function ProductModal({
           description: description ?? "",
           basePrice: Number(basePrice),
           durationMinutes: durationMinutes === "" ? null : Number(durationMinutes),
-          taxCode: taxCode.trim(), // ✅ pasirinktas tax.name
+          taxCode: taxCode.trim(), 
           status,
         };
         await onSubmit(dto);
@@ -179,7 +175,6 @@ export default function ProductModal({
             fullWidth
           />
 
-          {/* ✅ Tax select iš esamų taxes */}
           <TextField
             select
             label="Tax"

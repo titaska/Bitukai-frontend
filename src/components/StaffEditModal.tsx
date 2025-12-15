@@ -21,7 +21,7 @@ export default function StaffEditModal({ open, onClose, staff, onSaved }: Props)
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [password, setPassword] = useState(""); // ✅ privalomas
+  const [password, setPassword] = useState(""); 
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +34,7 @@ export default function StaffEditModal({ open, onClose, staff, onSaved }: Props)
     setLastName(staff.lastName ?? "");
     setEmail(staff.email ?? "");
     setPhoneNumber(staff.phoneNumber ?? "");
-    setPassword(""); // kad vartotojas įvestų naują
+    setPassword(""); 
     setError(null);
   }, [open, staff]);
 
@@ -44,7 +44,7 @@ export default function StaffEditModal({ open, onClose, staff, onSaved }: Props)
       !firstName.trim() ||
       !lastName.trim() ||
       !email.trim() ||
-      !password.trim() // ✅ privalomas
+      !password.trim() 
     );
   }, [saving, firstName, lastName, email, password]);
 
@@ -61,8 +61,8 @@ export default function StaffEditModal({ open, onClose, staff, onSaved }: Props)
         LastName: lastName.trim(),
         Email: email.trim(),
         PhoneNumber: phoneNumber.trim(),
-        Role: String(staff.role ?? ""),     // ✅ siunčiam esamą role (UI nekeičiam)
-        Password: password.trim(),          // ✅ privalomas backend
+        Role: String(staff.role ?? ""),     
+        Password: password.trim(),          
       };
 
       const updated = await updateStaff(String(staff.staffId), dto);

@@ -105,7 +105,6 @@ export default function Settings({ registrationNumber }: Props) {
     [loadTaxes]
   );
 
-  // ✅ Product.taxCode dažniausiai bus Tax.name; bet jei kažkur būtų id – irgi padengiam
   const taxLabelByCode = useMemo(() => {
     const map = new Map<string, string>();
     taxes.forEach((t) => {
@@ -138,7 +137,6 @@ export default function Settings({ registrationNumber }: Props) {
         search: search || undefined,
         page: 1,
         limit: 200,
-        // ✅ type specialiai NEPERDUODAM → gaunam ir ITEM, ir SERVICE
       });
 
       setRows(res?.data ?? []);
@@ -154,7 +152,6 @@ export default function Settings({ registrationNumber }: Props) {
     loadProducts();
   }, [loadProducts]);
 
-  // debounce search
   useEffect(() => {
     const t = setTimeout(() => loadProducts(), 250);
     return () => clearTimeout(t);
@@ -278,7 +275,7 @@ export default function Settings({ registrationNumber }: Props) {
         registrationNumber={registrationNumber}
         initial={editItem}
         onSubmit={editItem ? handleEdit : handleCreate}
-        taxes={taxes}   // ✅ svarbiausias pakeitimas
+        taxes={taxes}  
       />
 
       {/* ---------- TAXES ---------- */}

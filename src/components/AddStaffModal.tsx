@@ -22,9 +22,9 @@ export default function AddStaffModal({ open, onClose, registrationNumber, onCre
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [password, setPassword] = useState(""); // ✅ nauja
+  const [password, setPassword] = useState(""); 
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null); // ✅ kad matytum klaidą
+  const [error, setError] = useState<string | null>(null); 
 
   const disabled = useMemo(() => (
     !registrationNumber ||
@@ -32,7 +32,7 @@ export default function AddStaffModal({ open, onClose, registrationNumber, onCre
     !lastName.trim() ||
     !email.trim() ||
     !phoneNumber.trim() ||
-    !password.trim() ||          // ✅ privalomas
+    !password.trim() ||        
     pending
   ), [registrationNumber, firstName, lastName, email, phoneNumber, password, pending]);
 
@@ -59,18 +59,16 @@ export default function AddStaffModal({ open, onClose, registrationNumber, onCre
     setError(null);
 
     try {
-      // ✅ backend 400 rašė "Password field is required"
-      // todėl siunčiam būtent "password"
       const payload = {
         registrationNumber,
-        status: "ACTIVE", // jei pas tave backend laukia string; jei laukia skaičiaus palik 1
+        status: "ACTIVE", 
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         email: email.trim(),
         phoneNumber: phoneNumber.trim(),
         role: "STAFF",
         hireDate: new Date().toISOString(),
-        password: password.trim(), // ✅ SVARBIAUSIA
+        password: password.trim(),
       };
 
       const res = await fetch(`${STAFF_BASE}/staff`, {

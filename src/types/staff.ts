@@ -14,7 +14,7 @@ export enum StaffStatus {
     email: string;
     phoneNumber: string;
     role: StaffRole;
-    hireDate: string; // "YYYY-MM-DD"
+    hireDate: string; 
   }
   
   export interface StaffCreate {

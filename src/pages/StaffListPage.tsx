@@ -10,11 +10,11 @@ type BusinessType = "CATERING" | "BEAUTY";
 
 type Props = {
   registrationNumber: string;
-  businessType: BusinessType; // ✅ pridėta
+  businessType: BusinessType; 
 };
 
 type StaffDto = {
-  staffId: string;                 // ✅ GUID string
+  staffId: string;              
   registrationNumber: string;
   status: any;
   firstName: string;
@@ -28,7 +28,7 @@ type StaffDto = {
 type ProductDto = {
   productId: string;
   registrationNumber: string;
-  type: "ITEM" | "SERVICE"; // ✅ pagal tavo backend
+  type: "ITEM" | "SERVICE"; 
   name: string;
 };
 
@@ -43,10 +43,8 @@ export default function StaffListPage({ registrationNumber, businessType }: Prop
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // staffId -> ["Product A", "Product B"]
   const [staffProducts, setStaffProducts] = useState<Record<string, string[]>>({});
 
-  // ✅ CATERING -> ITEM, BEAUTY -> SERVICE
   const allowedType: "ITEM" | "SERVICE" = businessType === "CATERING" ? "ITEM" : "SERVICE";
   const colTitle = allowedType === "ITEM" ? "Items" : "Services";
 
@@ -65,7 +63,6 @@ export default function StaffListPage({ registrationNumber, businessType }: Prop
   const loadStaffProductsMap = useCallback(async () => {
     if (!registrationNumber) { setStaffProducts({}); return; }
 
-    // 1) pasiimam tik tos įmonės allowedType produktus
     const pRes = await fetch(
       `${PRODUCTS_BASE}/products?type=${allowedType}&registrationNumber=${encodeURIComponent(registrationNumber)}&page=1&limit=200`
     );
@@ -75,7 +72,6 @@ export default function StaffListPage({ registrationNumber, businessType }: Prop
     const products: ProductDto[] = Array.isArray(pJson) ? pJson : (pJson?.data ?? []);
     const list = Array.isArray(products) ? products : [];
 
-    // 2) iš kiekvieno produkto /staff susidedam mapą staffId -> [product names]
     const map: Record<string, string[]> = {};
 
     await Promise.all(
@@ -94,7 +90,6 @@ export default function StaffListPage({ registrationNumber, businessType }: Prop
       })
     );
 
-    // 3) remove duplicates
     Object.keys(map).forEach((k) => {
       map[k] = Array.from(new Set(map[k]));
     });
@@ -109,7 +104,6 @@ export default function StaffListPage({ registrationNumber, businessType }: Prop
     try {
       await loadStaff();
 
-      // ✅ best-effort: jeigu products failina, staff vis tiek rodys
       try {
         await loadStaffProductsMap();
       } catch (e) {
@@ -183,7 +177,7 @@ export default function StaffListPage({ registrationNumber, businessType }: Prop
         open={open}
         onClose={() => setOpen(false)}
         registrationNumber={registrationNumber}
-        onCreated={() => loadAll()} // ✅ kad po sukūrimo persikrautų ir map
+        onCreated={() => loadAll()} 
       />
     </Box>
   );

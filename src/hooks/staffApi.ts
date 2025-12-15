@@ -10,8 +10,8 @@ export type StaffUpdateDto = {
   LastName: string;
   Email: string;
   PhoneNumber: string;
-  Role: string;      // backend: string
-  Password: string;  // backend: string (privalomas)
+  Role: string;      
+  Password: string;  
 };
 
 async function readErr(res: Response) {
