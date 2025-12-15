@@ -28,15 +28,23 @@ export default function Navbar({ businessType, userRole }: NavbarProps) {
   const links = allLinks.filter(link => link.roles.includes(userRole));
 
   return (
-    <AppBar position="static" color="primary">
-      <Toolbar>
-        <Button color="inherit" component={Link} to="/reservations">
-          Reservations
-        </Button>
-        <Button color="inherit" component={Link} to="/reservations/new">
-          New Reservation
-        </Button>
-      </Toolbar>
-    </AppBar>
+    <aside className="sidebar">
+      <div className="sidebar-logo" />
+
+      <nav className="sidebar-nav">
+        {links.map(link => (
+          <NavLink
+            key={link.to}
+            to={link.to}
+            className={({ isActive }) =>
+              isActive ? "nav-item active" : "nav-item"
+            }
+          >
+            <div className="icon">{link.icon}</div>
+            
+          </NavLink>
+        ))}
+      </nav>
+    </aside>
   );
 }

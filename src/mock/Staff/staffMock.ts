@@ -9,7 +9,7 @@ export const initialStaffMock: StaffDto[] = [
     lastName: "member 1",
     email: "staff1@example.com",
     phoneNumber: "+37060000001",
-    role: StaffRole.STAFF,
+    role: "STAFF",
     hireDate: "2024-12-11",
   },
   {
@@ -20,7 +20,7 @@ export const initialStaffMock: StaffDto[] = [
     lastName: "member 2",
     email: "staff2@example.com",
     phoneNumber: "+37060000002",
-    role: StaffRole.STAFF,
+    role: "STAFF",
     hireDate: "2024-12-11",
   },
   {
@@ -31,7 +31,7 @@ export const initialStaffMock: StaffDto[] = [
     lastName: "member 3",
     email: "staff3@example.com",
     phoneNumber: "+37060000003",
-    role: StaffRole.STAFF,
+    role: "STAFF",
     hireDate: "2024-12-11",
   },
   {
@@ -42,7 +42,7 @@ export const initialStaffMock: StaffDto[] = [
     lastName: "member 4",
     email: "staff4@example.com",
     phoneNumber: "+37060000004",
-    role: StaffRole.STAFF,
+    role: "STAFF",
     hireDate: "2024-12-11",
   },
   {
@@ -53,7 +53,7 @@ export const initialStaffMock: StaffDto[] = [
     lastName: "member 5",
     email: "staff5@example.com",
     phoneNumber: "+37060000005",
-    role: StaffRole.STAFF,
+    role: "STAFF",
     hireDate: "2024-12-11",
   },
   {
@@ -64,7 +64,7 @@ export const initialStaffMock: StaffDto[] = [
     lastName: "member 6",
     email: "staff6@example.com",
     phoneNumber: "+37060000006",
-    role: StaffRole.STAFF,
+    role: "STAFF",
     hireDate: "2024-12-11",
   },
   {
@@ -75,7 +75,7 @@ export const initialStaffMock: StaffDto[] = [
     lastName: "member 7",
     email: "staff7@example.com",
     phoneNumber: "+37060000007",
-    role: StaffRole.STAFF,
+    role: "STAFF",
     hireDate: "2024-12-11",
   },
   {
@@ -86,7 +86,7 @@ export const initialStaffMock: StaffDto[] = [
     lastName: "member 8",
     email: "staff8@example.com",
     phoneNumber: "+37060000008",
-    role: StaffRole.STAFF,
+    role: "STAFF",
     hireDate: "2024-12-11",
   },
 ];

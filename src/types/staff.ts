@@ -3,11 +3,7 @@ export enum StaffStatus {
     INACTIVE = 2,
   }
   
-  export enum StaffRole {
-    STAFF = 1,
-    OWNER = 2,
-    SUPERADMIN = 3,
-  }
+  export type StaffRole = "STAFF" | "OWNER" | "SUPERADMIN";
   
   export interface StaffDto {
     staffId: number;

@@ -4,10 +4,14 @@ import { TaxCreateUpdate, TaxDto } from "../types/tax";
 const API_BASE = "http://localhost:5089/api";
 const TAX_URL = `${API_BASE}/tax`;
 
+async function readTextSafe(res: Response) {
+  const text = await res.text().catch(() => "");
+  return text || `Request failed with status ${res.status}`;
+}
+
 async function handleJson<T>(res: Response): Promise<T> {
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || `Request failed with status ${res.status}`);
+    throw new Error(await readTextSafe(res));
   }
   return (await res.json()) as T;
 }
@@ -39,18 +43,11 @@ export const taxApi = {
       body: JSON.stringify(dto),
     });
 
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(text || `Update failed with status ${res.status}`);
-    }
+    if (!res.ok) throw new Error(await readTextSafe(res));
   },
 
   async delete(id: string): Promise<void> {
     const res = await fetch(`${TAX_URL}/${id}`, { method: "DELETE" });
-
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(text || `Delete failed with status ${res.status}`);
-    }
+    if (!res.ok) throw new Error(await readTextSafe(res));
   },
 };

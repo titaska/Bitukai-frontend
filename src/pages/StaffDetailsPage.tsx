@@ -1,342 +1,490 @@
-// src/pages/Staff/StaffDetailsPage.tsx
-import React, { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useParams } from "react-router-dom";
 import {
   Box,
-  Typography,
-  Paper,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
   Button,
-  TextField,
-  Select,
-  MenuItem,
+  Paper,
+  Typography,
+  Stack,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  FormControl,
-  InputLabel,
+  TextField,
+  MenuItem,
 } from "@mui/material";
-import { useNavigate, useParams } from "react-router-dom";
-import { StaffDto, StaffUpdate } from "../types/staff";
-import { staffApi } from "../services/staffApi";
-import {
-  staffServicesApi,
-  StaffPerformedService,
-  ServiceOption,
-} from "../services/staffServicesApi";
+import { API_BASE, PRODUCTS_BASE } from "../constants/api";
 
-const formatDate = (iso: string | undefined | null): string => {
-  if (!iso) return "";
-  return iso.split("T")[0];
+type BusinessType = "CATERING" | "BEAUTY";
+
+type Props = {
+  registrationNumber: string;
+  businessType: BusinessType; // ✅ svarbu
 };
 
-const StaffDetailsPage: React.FC = () => {
-  const { staffId } = useParams();
-  const navigate = useNavigate();
+type StaffDto = {
+  staffId: string;
+  registrationNumber: string;
+  status: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  role: string;
+  hireDate: string;
+  password: string | null;
+};
 
-  const id = Number(staffId);
+type ProductDto = {
+  productId: string;
+  registrationNumber: string;
+  type: "ITEM" | "SERVICE"; // ✅ pagal tavo backend response
+  name: string;
+  description: string;
+  basePrice: number;
+  durationMinutes?: number | null;
+  taxCode: string;
+  status: boolean;
+};
+
+type AssignedRow = {
+  productId: string;
+  productName: string;
+  basePrice: number;
+};
+
+async function readBodySafe(res: Response) {
+  const text = await res.text().catch(() => "");
+  return text || `HTTP ${res.status}`;
+}
+
+type StaffUpdateDto = {
+  status: "ACTIVE" | "INACTIVE";
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  passwordHash?: string;
+};
+
+export default function StaffDetailsPage({ registrationNumber, businessType }: Props) {
+  const { staffId } = useParams<{ staffId: string }>();
 
   const [staff, setStaff] = useState<StaffDto | null>(null);
-  const [form, setForm] = useState<StaffUpdate | null>(null);
-  const [services, setServices] = useState<StaffPerformedService[]>([]);
+  const [assigned, setAssigned] = useState<AssignedRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  // Assign modal state
+  // edit mode
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // form fields
+  const [status, setStatus] = useState<"ACTIVE" | "INACTIVE">("ACTIVE");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+
+  // assign modal
   const [assignOpen, setAssignOpen] = useState(false);
-  const [allServices, setAllServices] = useState<ServiceOption[]>([]);
-  const [selectedServiceId, setSelectedServiceId] = useState<number | "">("");
-  const [assignLoading, setAssignLoading] = useState(false);
+  const [options, setOptions] = useState<ProductDto[]>([]);
+  const [selectedProductId, setSelectedProductId] = useState("");
 
-  const load = async () => {
-    if (!staffId || Number.isNaN(id)) {
-      setError("Invalid staff id");
-      setLoading(false);
+  const [errorText, setErrorText] = useState<string | null>(null);
+
+  // ✅ CATERING -> ITEM, BEAUTY -> SERVICE
+  const allowedType: "ITEM" | "SERVICE" = businessType === "CATERING" ? "ITEM" : "SERVICE";
+  const thingLabel = allowedType === "ITEM" ? "Item" : "Service";
+  const thingLabelPlural = allowedType === "ITEM" ? "Items" : "Services";
+
+  // ✅ reg number imam iš props ARBA iš staff (jei props būna tuščias)
+  const effectiveRegNumber = useMemo(() => {
+    return (registrationNumber || staff?.registrationNumber || "").trim();
+  }, [registrationNumber, staff?.registrationNumber]);
+
+  const hydrateFormFromStaff = useCallback((s: StaffDto) => {
+    setStatus(String(s.status).toUpperCase() === "INACTIVE" ? "INACTIVE" : "ACTIVE");
+    setFirstName(s.firstName ?? "");
+    setLastName(s.lastName ?? "");
+    setEmail(s.email ?? "");
+    setPhoneNumber(s.phoneNumber ?? "");
+    setNewPassword("");
+  }, []);
+
+  // 1) load staff by id
+  const loadStaff = useCallback(async () => {
+    if (!staffId) return;
+
+    const sRes = await fetch(`${API_BASE}/staff/${encodeURIComponent(staffId)}`);
+
+    if (sRes.status === 404) {
+      setStaff(null);
+      return;
+    }
+    if (!sRes.ok) throw new Error(await readBodySafe(sRes));
+
+    const staffJson = (await sRes.json()) as StaffDto;
+    setStaff(staffJson);
+    hydrateFormFromStaff(staffJson);
+  }, [staffId, hydrateFormFromStaff]);
+
+  // helper: load products by allowedType
+  const loadProducts = useCallback(async (): Promise<ProductDto[]> => {
+    if (!effectiveRegNumber) return [];
+
+    const res = await fetch(
+      `${PRODUCTS_BASE}/products?type=${allowedType}&registrationNumber=${encodeURIComponent(
+        effectiveRegNumber
+      )}&page=1&limit=200`
+    );
+
+    if (!res.ok) throw new Error(await readBodySafe(res));
+    const json = await res.json();
+    const data: ProductDto[] = Array.isArray(json) ? json : (json?.data ?? []);
+    return Array.isArray(data) ? data : [];
+  }, [effectiveRegNumber, allowedType]);
+
+  // 2) load assigned (per product -> staff list endpoint)
+  const loadAssigned = useCallback(async () => {
+    if (!staffId || !effectiveRegNumber) {
+      setAssigned([]);
       return;
     }
 
+    const products = await loadProducts();
+
+    const rows: AssignedRow[] = [];
+    await Promise.all(
+      products.map(async (p) => {
+        const r = await fetch(`${PRODUCTS_BASE}/products/${encodeURIComponent(p.productId)}/staff`);
+        if (!r.ok) return;
+
+        const staffList = await r.json();
+        const list = Array.isArray(staffList) ? staffList : [];
+
+        const has = list.some((x: any) => String(x.staffId) === String(staffId));
+        if (has) {
+          rows.push({
+            productId: p.productId,
+            productName: p.name,
+            basePrice: p.basePrice,
+          });
+        }
+      })
+    );
+
+    setAssigned(rows);
+  }, [staffId, effectiveRegNumber, loadProducts]);
+
+  // 3) load options for dropdown (exclude already assigned)
+  const loadOptions = useCallback(async () => {
+    if (!effectiveRegNumber) {
+      setOptions([]);
+      return;
+    }
+
+    const products = await loadProducts();
+    const assignedIds = new Set(assigned.map((a) => a.productId));
+    const filtered = products.filter((p) => !assignedIds.has(p.productId));
+
+    setOptions(filtered);
+  }, [effectiveRegNumber, loadProducts, assigned]);
+
+  const loadAll = useCallback(async () => {
+    setLoading(true);
+    setErrorText(null);
     try {
-      setLoading(true);
-      setError(null);
-
-      const s = await staffApi.getById(id);
-      const normalizedHireDate = formatDate(s.hireDate);
-
-      const normalizedStaff: StaffDto = {
-        ...s,
-        hireDate: normalizedHireDate,
-      };
-
-      setStaff(normalizedStaff);
-
-      setForm({
-        status: normalizedStaff.status,
-        firstName: normalizedStaff.firstName,
-        lastName: normalizedStaff.lastName,
-        email: normalizedStaff.email,
-        phoneNumber: normalizedStaff.phoneNumber,
-        passwordHash: null,
-        role: normalizedStaff.role,
-        hireDate: normalizedHireDate,
-      });
-
-      const svc = await staffServicesApi.getByStaffId(id);
-      setServices(svc);
+      await loadStaff();
     } catch (e: any) {
-      console.error(e);
-      setError("Failed to load staff data");
+      setErrorText(String(e?.message ?? e));
     } finally {
       setLoading(false);
     }
-  };
+  }, [loadStaff]);
 
   useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [staffId]);
+    loadAll();
+  }, [loadAll]);
 
-  const handleChange =
-    (field: keyof StaffUpdate) =>
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value;
-      setForm((prev) => (prev ? { ...prev, [field]: value } : prev));
+  // kai tik turim staffId + effectiveRegNumber -> kraunam assigned
+  useEffect(() => {
+    if (!staffId || !effectiveRegNumber) return;
+    loadAssigned().catch((e) => setErrorText(String(e?.message ?? e)));
+  }, [staffId, effectiveRegNumber, loadAssigned]);
+
+  // atidarius modalą – pakraunam dropdown options
+  useEffect(() => {
+    if (!assignOpen) return;
+    loadOptions().catch((e) => setErrorText(String(e?.message ?? e)));
+  }, [assignOpen, loadOptions]);
+
+  const canSave = useMemo(() => {
+    return !!staff && !saving && firstName.trim() && lastName.trim() && email.trim();
+  }, [staff, saving, firstName, lastName, email]);
+
+  const saveStaff = async () => {
+    if (!staffId || !staff || !canSave) return;
+
+    setSaving(true);
+    setErrorText(null);
+
+    try {
+      const dto: StaffUpdateDto = {
+        status,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email.trim(),
+        phoneNumber: phoneNumber.trim(),
+        ...(newPassword.trim() ? { passwordHash: newPassword.trim() } : {}),
+      };
+
+      const res = await fetch(`${API_BASE}/staff/${encodeURIComponent(staffId)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dto),
+      });
+
+      if (!res.ok) throw new Error(await readBodySafe(res));
+
+      const updated = (await res.json()) as StaffDto;
+      setStaff(updated);
+      hydrateFormFromStaff(updated);
+      setEditing(false);
+    } catch (e: any) {
+      setErrorText(String(e?.message ?? e));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const cancelEdit = () => {
+    if (staff) hydrateFormFromStaff(staff);
+    setEditing(false);
+    setErrorText(null);
+  };
+
+  const unassign = async (productId: string) => {
+    if (!staffId) return;
+
+    setErrorText(null);
+
+    const res = await fetch(
+      `${PRODUCTS_BASE}/products/${encodeURIComponent(productId)}/staff/${encodeURIComponent(staffId)}`,
+      { method: "DELETE" }
+    );
+
+    if (!res.ok) {
+      setErrorText(await readBodySafe(res));
+      return;
+    }
+
+    await loadAssigned();
+  };
+
+  const assign = async () => {
+    if (!staffId || !selectedProductId) return;
+
+    setErrorText(null);
+
+    const payload = {
+      staffId,
+      status: true,
+      validFrom: null,
+      validTo: null,
     };
 
-  const handleSave = async () => {
-    if (!staff || !form) return;
-    try {
-      setLoading(true);
-      setError(null);
-      await staffApi.update(staff.staffId, form);
-      await load();
-    } catch (e: any) {
-      console.error(e);
-      setError("Failed to save changes");
-      setLoading(false);
+    const res = await fetch(
+      `${PRODUCTS_BASE}/products/${encodeURIComponent(selectedProductId)}/staff`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    if (!res.ok) {
+      setErrorText(await readBodySafe(res));
+      return;
     }
+
+    setAssignOpen(false);
+    setSelectedProductId("");
+    await loadAssigned();
   };
 
-  const handleUnassign = async (staffServiceId: number) => {
-    if (Number.isNaN(id)) return;
-    try {
-      setError(null);
-      await staffServicesApi.unassign(id, staffServiceId);
-      await load();
-    } catch (e: any) {
-      console.error(e);
-      setError("Failed to unassign service");
-    }
-  };
-
-  const openAssignModal = async () => {
-    if (Number.isNaN(id)) return;
-    try {
-      setError(null);
-      setAssignLoading(true);
-      setSelectedServiceId("");
-      const opts = await staffServicesApi.getAllServices();
-      setAllServices(opts);
-      setAssignOpen(true);
-    } catch (e: any) {
-      console.error(e);
-      setError("Failed to load services list");
-    } finally {
-      setAssignLoading(false);
-    }
-  };
-
-  const assignedNames = useMemo(() => new Set(services.map((s) => s.name)), [services]);
-
-  const availableOptions = useMemo(
-    () => allServices.filter((o) => !assignedNames.has(o.name)),
-    [allServices, assignedNames]
-  );
-
-  const confirmAssign = async () => {
-    if (Number.isNaN(id) || selectedServiceId === "") return;
-
-    try {
-      setAssignLoading(true);
-      setError(null);
-      await staffServicesApi.assign(id, Number(selectedServiceId));
-      setAssignOpen(false);
-      await load();
-    } catch (e: any) {
-      console.error(e);
-      // jei backend grąžins „Already assigned“ ar unique constraint – parodysim normaliai
-      setError(e?.message || "Failed to assign service");
-    } finally {
-      setAssignLoading(false);
-    }
-  };
-
-  if (loading) return <Box p={3}>Loading...</Box>;
-  if (error)
+  // UI
+  if (loading) {
     return (
-      <Box p={3}>
-        <Typography color="error">{error}</Typography>
+      <Box sx={{ ml: "80px", p: 3 }}>
+        <Typography>Loading...</Typography>
       </Box>
     );
-  if (!staff || !form) return <Box p={3}>Staff member not found</Box>;
+  }
+
+  if (!staff) {
+    return (
+      <Box sx={{ ml: "80px", p: 3 }}>
+        <Typography>Staff not found</Typography>
+        {errorText && (
+          <Typography color="error" sx={{ mt: 1 }}>
+            {errorText}
+          </Typography>
+        )}
+      </Box>
+    );
+  }
 
   return (
-    <Box p={3}>
-      <Box display="flex" justifyContent="space-between" mb={2} alignItems="center">
-        <Typography variant="h5">
-          {staff.firstName} {staff.lastName}
+    <Box sx={{ ml: "80px", p: 3 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+        <Typography variant="h5" fontWeight={700}>
+          Staff member details
         </Typography>
 
-        <Box display="flex" gap={1}>
-          <Button variant="contained" onClick={handleSave}>
-            Save changes
+        {!editing ? (
+          <Button variant="contained" onClick={() => setEditing(true)}>
+            Edit
           </Button>
-          <Button variant="outlined" onClick={() => navigate("/staff")}>
-            Back to list
-          </Button>
-        </Box>
-      </Box>
+        ) : (
+          <Stack direction="row" gap={1}>
+            <Button variant="outlined" onClick={cancelEdit} disabled={saving}>
+              Cancel
+            </Button>
+            <Button variant="contained" onClick={saveStaff} disabled={!canSave}>
+              {saving ? "Saving..." : "Save"}
+            </Button>
+          </Stack>
+        )}
+      </Stack>
+
+      {errorText && (
+        <Paper sx={{ p: 2, mb: 2, border: "1px solid", borderColor: "error.main" }}>
+          <Typography color="error">{errorText}</Typography>
+        </Paper>
+      )}
 
       <Paper sx={{ p: 2, mb: 3 }}>
-        <Box display="flex" flexWrap="wrap" columnGap={6} rowGap={3}>
-          <Box minWidth={200}>
-            <Typography variant="caption">First name</Typography>
-            <TextField variant="standard" fullWidth value={form.firstName} onChange={handleChange("firstName")} />
-          </Box>
+        <Stack gap={2}>
+          {/* Employed on: visada read-only */}
+          <Typography color="text.secondary">
+            Employed on: {new Date(staff.hireDate).toLocaleDateString()}
+          </Typography>
 
-          <Box minWidth={200}>
-            <Typography variant="caption">Last name</Typography>
-            <TextField variant="standard" fullWidth value={form.lastName} onChange={handleChange("lastName")} />
-          </Box>
+          <TextField
+            select
+            label="Status"
+            value={status}
+            onChange={(e) => setStatus(e.target.value as any)}
+            fullWidth
+            disabled={!editing}
+          >
+            <MenuItem value="ACTIVE">ACTIVE</MenuItem>
+            <MenuItem value="INACTIVE">INACTIVE</MenuItem>
+          </TextField>
 
-          <Box minWidth={200}>
-            <Typography variant="caption">Employed on</Typography>
+          <Stack direction={{ xs: "column", sm: "row" }} gap={2}>
             <TextField
-              type="date"
-              variant="standard"
+              label="First name"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
               fullWidth
-              value={form.hireDate || ""}
-              onChange={handleChange("hireDate")}
-              InputLabelProps={{ shrink: true }}
+              disabled={!editing}
             />
-          </Box>
-
-          <Box minWidth={200}>
-            <Typography variant="caption">Status</Typography>
-            <Select
-              variant="standard"
+            <TextField
+              label="Last name"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
               fullWidth
-              value={form.status}
-              onChange={(e) =>
-                setForm((prev) =>
-                  prev
-                    ? { ...prev, status: Number(e.target.value) as StaffUpdate["status"] }
-                    : prev
-                )
-              }
-            >
-              <MenuItem value={1}>ACTIVE</MenuItem>
-              <MenuItem value={2}>INACTIVE</MenuItem>
-            </Select>
-          </Box>
+              disabled={!editing}
+            />
+          </Stack>
 
-          <Box minWidth={200}>
-            <Typography variant="caption">Email</Typography>
-            <TextField variant="standard" fullWidth value={form.email} onChange={handleChange("email")} />
-          </Box>
+          <Stack direction={{ xs: "column", sm: "row" }} gap={2}>
+            <TextField
+              label="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              fullWidth
+              disabled={!editing}
+            />
+            <TextField
+              label="Phone number"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              fullWidth
+              disabled={!editing}
+            />
+          </Stack>
 
-          <Box minWidth={200}>
-            <Typography variant="caption">Phone</Typography>
-            <TextField variant="standard" fullWidth value={form.phoneNumber} onChange={handleChange("phoneNumber")} />
-          </Box>
-        </Box>
+          <TextField
+            label="New password (optional)"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            fullWidth
+            disabled={!editing}
+            helperText="If empty, password is not changed"
+          />
+        </Stack>
       </Paper>
 
       <Paper sx={{ p: 2 }}>
-        <Box display="flex" justifyContent="space-between" mb={1}>
-          <Typography variant="subtitle1">Performed services</Typography>
-          <Button variant="contained" size="small" onClick={openAssignModal}>
+        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+          <Typography fontWeight={700}>Performed {thingLabelPlural}</Typography>
+          <Button variant="contained" onClick={() => setAssignOpen(true)}>
             Add new
           </Button>
-        </Box>
+        </Stack>
 
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Service</TableCell>
-              <TableCell>Price</TableCell>
-              <TableCell align="right" />
-            </TableRow>
-          </TableHead>
-
-          <TableBody>
-            {services.map((s) => (
-              <TableRow key={s.id}>
-                <TableCell>{s.name}</TableCell>
-                <TableCell>
-                  {Number.isFinite(Number((s as any).price))
-                    ? `${Number((s as any).price).toFixed(2)} $`
-                    : "-"}
-                </TableCell>
-                <TableCell align="right">
-                  <Button size="small" onClick={() => handleUnassign(s.id)}>
+        {assigned.length === 0 ? (
+          <Typography color="text.secondary">No {thingLabelPlural.toLowerCase()} assigned</Typography>
+        ) : (
+          <Stack gap={1}>
+            {assigned.map((s) => (
+              <Paper key={s.productId} sx={{ p: 1.5 }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Box>
+                    <Typography fontWeight={600}>{s.productName}</Typography>
+                    <Typography color="text.secondary">{s.basePrice} €</Typography>
+                  </Box>
+                  <Button variant="outlined" color="error" onClick={() => unassign(s.productId)}>
                     Unassign
                   </Button>
-                </TableCell>
-              </TableRow>
+                </Stack>
+              </Paper>
             ))}
-
-            {services.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={3}>No services assigned.</TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+          </Stack>
+        )}
       </Paper>
 
-      {/* Assign modal */}
-      <Dialog open={assignOpen} onClose={() => setAssignOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Assign service</DialogTitle>
-        <DialogContent dividers>
-          <FormControl fullWidth variant="standard" disabled={assignLoading}>
-            <InputLabel id="service-select-label">Service</InputLabel>
-            <Select
-              labelId="service-select-label"
-              value={selectedServiceId}
-              onChange={(e) => setSelectedServiceId(Number(e.target.value))}
-            >
-              {availableOptions.map((o) => (
-                <MenuItem key={o.id} value={o.id}>
-                  {o.name}
-                </MenuItem>
-              ))}
-              {availableOptions.length === 0 && (
-                <MenuItem value="" disabled>
-                  No available services
-                </MenuItem>
-              )}
-            </Select>
-          </FormControl>
+      <Dialog open={assignOpen} onClose={() => setAssignOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Assign {thingLabel}</DialogTitle>
+        <DialogContent>
+          <TextField
+            select
+            fullWidth
+            label={thingLabel}
+            value={selectedProductId}
+            onChange={(e) => setSelectedProductId(e.target.value)}
+            sx={{ mt: 1 }}
+            helperText={options.length === 0 ? `No available ${thingLabelPlural.toLowerCase()} to assign` : " "}
+          >
+            {options.map((p) => (
+              <MenuItem key={p.productId} value={p.productId}>
+                {p.name} — {p.basePrice} €
+              </MenuItem>
+            ))}
+          </TextField>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setAssignOpen(false)} disabled={assignLoading}>
+          <Button variant="outlined" onClick={() => setAssignOpen(false)}>
             Cancel
           </Button>
-          <Button
-            onClick={confirmAssign}
-            variant="contained"
-            disabled={assignLoading || selectedServiceId === "" || availableOptions.length === 0}
-          >
+          <Button variant="contained" onClick={assign} disabled={!selectedProductId || options.length === 0}>
             Assign
           </Button>
         </DialogActions>
       </Dialog>
     </Box>
   );
-};
-
-export default StaffDetailsPage;
+}

@@ -1,191 +1,190 @@
-import React, { useEffect, useState } from "react";
-import {
-  Box,
-  Typography,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  Paper,
-} from "@mui/material";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { StaffDto, StaffCreate } from "../types/staff";
-import StaffFormModal from "../components/StaffFormModal";
-import { staffApi } from "../services/staffApi";
-import { staffServicesApi } from "../services/staffServicesApi";
+import {
+  Box, Button, Paper, Table, TableBody, TableCell, TableHead, TableRow, Typography
+} from "@mui/material";
+import { STAFF_BASE, PRODUCTS_BASE } from "../constants/api";
+import AddStaffModal from "../components/AddStaffModal";
 
-const formatDate = (value: any): string => {
-  if (!value) return "";
-  if (typeof value === "string") return value.split("T")[0];
-  if (value instanceof Date) return value.toISOString().slice(0, 10);
-  return String(value).split("T")[0];
+type BusinessType = "CATERING" | "BEAUTY";
+
+type Props = {
+  registrationNumber: string;
+  businessType: BusinessType; // ✅ pridėta
 };
 
-const getErrorMessage = async (e: any): Promise<string> => {
-  if (e?.message) return e.message;
-  return "Unknown error";
+type StaffDto = {
+  staffId: string;                 // ✅ GUID string
+  registrationNumber: string;
+  status: any;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  role: any;
+  hireDate: string;
 };
 
-const StaffListPage: React.FC = () => {
-  const [staff, setStaff] = useState<StaffDto[]>([]);
-  const [servicesMap, setServicesMap] = useState<Record<number, string>>({});
-  const [loading, setLoading] = useState(true);
-  const [openModal, setOpenModal] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+type ProductDto = {
+  productId: string;
+  registrationNumber: string;
+  type: "ITEM" | "SERVICE"; // ✅ pagal tavo backend
+  name: string;
+};
 
+async function readBodySafe(res: Response) {
+  const text = await res.text().catch(() => "");
+  return text || `HTTP ${res.status}`;
+}
+
+export default function StaffListPage({ registrationNumber, businessType }: Props) {
   const navigate = useNavigate();
+  const [rows, setRows] = useState<StaffDto[]>([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const load = async () => {
+  // staffId -> ["Product A", "Product B"]
+  const [staffProducts, setStaffProducts] = useState<Record<string, string[]>>({});
+
+  // ✅ CATERING -> ITEM, BEAUTY -> SERVICE
+  const allowedType: "ITEM" | "SERVICE" = businessType === "CATERING" ? "ITEM" : "SERVICE";
+  const colTitle = allowedType === "ITEM" ? "Items" : "Services";
+
+  const loadStaff = useCallback(async () => {
+    if (!registrationNumber) { setRows([]); return; }
+
+    const res = await fetch(
+      `${STAFF_BASE}/staff?registrationNumber=${encodeURIComponent(registrationNumber)}`
+    );
+    if (!res.ok) throw new Error(await readBodySafe(res));
+
+    const data = await res.json();
+    setRows(Array.isArray(data) ? data : []);
+  }, [registrationNumber]);
+
+  const loadStaffProductsMap = useCallback(async () => {
+    if (!registrationNumber) { setStaffProducts({}); return; }
+
+    // 1) pasiimam tik tos įmonės allowedType produktus
+    const pRes = await fetch(
+      `${PRODUCTS_BASE}/products?type=${allowedType}&registrationNumber=${encodeURIComponent(registrationNumber)}&page=1&limit=200`
+    );
+    if (!pRes.ok) throw new Error(await readBodySafe(pRes));
+
+    const pJson = await pRes.json();
+    const products: ProductDto[] = Array.isArray(pJson) ? pJson : (pJson?.data ?? []);
+    const list = Array.isArray(products) ? products : [];
+
+    // 2) iš kiekvieno produkto /staff susidedam mapą staffId -> [product names]
+    const map: Record<string, string[]> = {};
+
+    await Promise.all(
+      list.map(async (p) => {
+        const r = await fetch(`${PRODUCTS_BASE}/products/${encodeURIComponent(p.productId)}/staff`);
+        if (!r.ok) return;
+
+        const staffList = await r.json();
+        const staffArr = Array.isArray(staffList) ? staffList : [];
+
+        staffArr.forEach((s: any) => {
+          const id = String(s.staffId);
+          if (!map[id]) map[id] = [];
+          map[id].push(p.name);
+        });
+      })
+    );
+
+    // 3) remove duplicates
+    Object.keys(map).forEach((k) => {
+      map[k] = Array.from(new Set(map[k]));
+    });
+
+    setStaffProducts(map);
+  }, [registrationNumber, allowedType]);
+
+  const loadAll = useCallback(async () => {
+    if (!registrationNumber) { setRows([]); setStaffProducts({}); return; }
+
+    setLoading(true);
     try {
-      setLoading(true);
-      setError(null);
+      await loadStaff();
 
-      // 1) staff list
-      const data = await staffApi.getAll();
-      const normalized = data.map((s) => ({
-        ...s,
-        hireDate: formatDate(s.hireDate),
-      }));
-      setStaff(normalized);
-
-      // 2) services per staff (staffId -> "name1, name2")
-      const entries = await Promise.all(
-        normalized.map(async (m) => {
-          try {
-            const svcs = await staffServicesApi.getByStaffId(m.staffId);
-            const names = svcs.map((x) => x.name).filter(Boolean);
-            return [m.staffId, names.length ? names.join(", ") : "—"] as const;
-          } catch {
-            return [m.staffId, "—"] as const;
-          }
-        })
-      );
-
-      setServicesMap(Object.fromEntries(entries));
-    } catch (e: any) {
+      // ✅ best-effort: jeigu products failina, staff vis tiek rodys
+      try {
+        await loadStaffProductsMap();
+      } catch (e) {
+        console.error("loadStaffProductsMap failed:", e);
+        setStaffProducts({});
+      }
+    } catch (e) {
       console.error(e);
-      setError(await getErrorMessage(e));
+      setRows([]);
+      setStaffProducts({});
     } finally {
       setLoading(false);
     }
-  };
+  }, [registrationNumber, loadStaff, loadStaffProductsMap]);
 
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  useEffect(() => { loadAll(); }, [loadAll]);
 
-  const handleSaveNew = async (dto: StaffCreate) => {
-    try {
-      setLoading(true);
-      setError(null);
+  const servicesText = useCallback((staffId: string) => {
+    const list = staffProducts[staffId] ?? [];
+    return list.length ? list.join(", ") : "—";
+  }, [staffProducts]);
 
-      await staffApi.create(dto);
-      setOpenModal(false);
-      await load();
-    } catch (e: any) {
-      console.error(e);
-      setError(await getErrorMessage(e));
-      setLoading(false);
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      await staffApi.delete(id);
-      await load();
-    } catch (e: any) {
-      console.error(e);
-      setError(await getErrorMessage(e));
-      setLoading(false);
-    }
-  };
+  const canAdd = useMemo(() => !!registrationNumber, [registrationNumber]);
 
   return (
-    <Box p={3}>
-      <Box display="flex" justifyContent="space-between" mb={2}>
-        <Typography variant="h5">Staff members</Typography>
-        <Button variant="contained" onClick={() => setOpenModal(true)}>
+    <Box sx={{ ml: "80px", p: 3 }}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+        <Typography variant="h5" fontWeight={700}>Staff members</Typography>
+        <Button variant="contained" onClick={() => setOpen(true)} disabled={!canAdd}>
           Add New
         </Button>
       </Box>
 
-      {error && (
-        <Box mb={2}>
-          <Typography color="error">{error}</Typography>
-        </Box>
-      )}
+      <Paper sx={{ p: 2 }}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell><b>Name</b></TableCell>
+              <TableCell><b>{colTitle}</b></TableCell>
+              <TableCell><b>Employed on</b></TableCell>
+              <TableCell align="right"><b>Actions</b></TableCell>
+            </TableRow>
+          </TableHead>
 
-      {loading ? (
-        <Typography>Loading...</Typography>
-      ) : (
-        <Paper>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Services</TableCell>
-                <TableCell>Employed on</TableCell>
-                <TableCell align="right" />
+          <TableBody>
+            {rows.map((s) => (
+              <TableRow key={s.staffId} hover>
+                <TableCell>{s.firstName} {s.lastName}</TableCell>
+                <TableCell sx={{ color: "#666" }}>{servicesText(s.staffId)}</TableCell>
+                <TableCell>{new Date(s.hireDate).toLocaleDateString()}</TableCell>
+                <TableCell align="right">
+                  <Button onClick={() => navigate(`/staff/${s.staffId}`)}>
+                    Edit details
+                  </Button>
+                </TableCell>
               </TableRow>
-            </TableHead>
+            ))}
 
-            <TableBody>
-              {staff.map((member) => (
-                <TableRow key={member.staffId}>
-                  <TableCell>
-                    <Button
-                      variant="text"
-                      onClick={() => navigate(`/staff/${member.staffId}`)}
-                    >
-                      {member.firstName} {member.lastName}
-                    </Button>
-                  </TableCell>
+            {rows.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={4} sx={{ py: 6, textAlign: "center", color: "#777" }}>
+                  {loading ? "Loading..." : "No staff found"}
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </Paper>
 
-                  <TableCell>{servicesMap[member.staffId] ?? "—"}</TableCell>
-
-                  <TableCell>{formatDate(member.hireDate)}</TableCell>
-
-                  <TableCell align="right">
-                    <Button
-                      size="small"
-                      onClick={() => navigate(`/staff/${member.staffId}`)}
-                    >
-                      Edit Details
-                    </Button>
-                    <Button
-                      size="small"
-                      color="error"
-                      onClick={() => handleDelete(member.staffId)}
-                    >
-                      Delete
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-
-              {staff.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={4}>No staff members found.</TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </Paper>
-      )}
-
-      <StaffFormModal
-        open={openModal}
-        onClose={() => setOpenModal(false)}
-        onSave={handleSaveNew}
+      <AddStaffModal
+        open={open}
+        onClose={() => setOpen(false)}
+        registrationNumber={registrationNumber}
+        onCreated={() => loadAll()} // ✅ kad po sukūrimo persikrautų ir map
       />
     </Box>
   );
-};
-
-export default StaffListPage;
+}
