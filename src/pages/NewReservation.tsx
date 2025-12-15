@@ -1,3 +1,3 @@
 export default function NewReservation() {
-  return <h1>New Reservation Form</h1>;
+  return <h1>New Reservation Page</h1>;
 }
