@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import "./NewReservation.css";
+import { API_BASE } from "../../api/apiBase";
 
-const API_BASE = "http://localhost:5089/api";
+import { createReservation } from "../../hooks/useCreateReservation";
+import { getTakenSlots } from "../../hooks/useTakenSlots";
 
 /* ================= TYPES ================= */
 
@@ -78,25 +80,22 @@ export default function NewReservation() {
 
   /* ================= FETCH AVAILABILITY ================= */
 
-  useEffect(() => {
-    if (!selectedDate || staff.length === 0) return;
+      useEffect(() => {
+      if (!selectedDate || staff.length === 0) return;
 
-    const load = async () => {
-      const map: Record<string, string[]> = {};
+      const load = async () => {
+        const map: Record<string, string[]> = {};
 
-      for (const s of staff) {
-        const res = await fetch(
-          `${API_BASE}/reservations/availability?employeeId=${s.staffId}&date=${selectedDate}`
-        );
-        const data: string[] = await res.json();
-        map[s.staffId] = data.map(d => d.substring(11, 16));
-      }
+       for (const s of staff) {
+          const slots = await getTakenSlots(s.staffId, selectedDate);
+          map[s.staffId] = slots.map(d => d.substring(11, 16));
+        }
 
-      setTakenSlots(map);
-    };
+        setTakenSlots(map);
+      };
 
-    load();
-  }, [selectedDate, staff]);
+      load();
+    }, [selectedDate, staff]);
 
   /* ================= SLOT GENERATION ================= */
 
@@ -135,38 +134,36 @@ export default function NewReservation() {
 
   /* ================= SUBMIT ================= */
 
+  
+
   async function handleSubmit() {
-    if (!selectedStaff || !selectedTime || !selectedProduct) {
-      alert("Missing data");
-      return;
-    }
+  if (!selectedStaff || !selectedTime || !selectedProduct) {
+    alert("Missing data");
+    return;
+  }
 
-    const start = `${selectedDate}T${selectedTime.split(" - ")[0]}:00`;
+  const start = `${selectedDate}T${selectedTime.split(" - ")[0]}:00`;
 
-    const res = await fetch(`${API_BASE}/reservations`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        registrationNumber: selectedBusiness,
-        employeeId: selectedStaff,
-        serviceProductId: selectedProduct.productId,
-        startTime: new Date(start).toISOString(),
-        durationMinutes: selectedProduct.durationMinutes,
-        clientName,
-        clientSurname,
-        clientPhone,
-        notes
-      })
+  try {
+    await createReservation({
+      registrationNumber: selectedBusiness,
+      employeeId: selectedStaff,
+      serviceProductId: selectedProduct.productId,
+      startTime: new Date(start).toISOString(),
+      durationMinutes: selectedProduct.durationMinutes,
+      clientName,
+      clientSurname,
+      clientPhone,
+      notes
     });
-
-    if (!res.ok) {
-      alert("Failed to add appointment");
-      return;
-    }
 
     alert("Appointment created");
     setSelectedTime("");
+  } catch {
+    alert("Failed to add appointment");
   }
+  }
+
 
   /* ================= RENDER ================= */
 
