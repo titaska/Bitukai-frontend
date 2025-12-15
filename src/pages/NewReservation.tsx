@@ -28,17 +28,17 @@ interface Product {
 export default function NewReservation() {
   /* ---------- DATA ---------- */
   const [businesses, setBusinesses] = useState<Business[]>([]);
-  const [staff, setStaff] = useState<Staff[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [staff, setStaff] = useState<Staff[]>([]);
 
-  /* ---------- SELECTIONS ---------- */
+  /* ---------- SELECTION ---------- */
   const [selectedBusiness, setSelectedBusiness] = useState("");
-  const [selectedStaff, setSelectedStaff] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedDate, setSelectedDate] = useState("");
 
   /* ---------- TIME ---------- */
-  const [takenSlots, setTakenSlots] = useState<string[]>([]);
+  const [takenSlots, setTakenSlots] = useState<Record<string, string[]>>({});
+  const [selectedStaff, setSelectedStaff] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
 
   /* ---------- CLIENT ---------- */
@@ -47,55 +47,56 @@ export default function NewReservation() {
   const [clientPhone, setClientPhone] = useState("");
   const [notes, setNotes] = useState("");
 
-  /* ================= FETCH LOCATIONS ================= */
+  /* ================= FETCH BUSINESS ================= */
 
   useEffect(() => {
     fetch(`${API_BASE}/business`)
-      .then(res => res.json())
-      .then(data => setBusinesses(Array.isArray(data) ? data : []))
+      .then(r => r.json())
+      .then(setBusinesses)
       .catch(console.error);
   }, []);
 
-  /* ================= FETCH STAFF ================= */
-
-  useEffect(() => {
-    fetch(`${API_BASE}/staff`)
-      .then(res => res.json())
-      .then(data => setStaff(Array.isArray(data) ? data : []))
-      .catch(console.error);
-  }, []);
-
-  /* ================= FETCH SERVICES ================= */
+  /* ================= FETCH PRODUCTS ================= */
 
   useEffect(() => {
     fetch(`${API_BASE}/products`)
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data.data)) {
-          setProducts(data.data);
-        } else {
-          setProducts([]);
-        }
-      })
+      .then(r => r.json())
+      .then(res => setProducts(res.data ?? []))
       .catch(console.error);
   }, []);
 
-  /* ================= FETCH TAKEN SLOTS ================= */
+  /* ================= FETCH STAFF FOR SERVICE ================= */
 
   useEffect(() => {
-    if (!selectedStaff || !selectedDate) return;
+    if (!selectedProduct) return;
 
-    fetch(
-      `${API_BASE}/reservations/availability?employeeId=${selectedStaff}&date=${selectedDate}`
-    )
-      .then(res => res.json())
-      .then((data: string[]) => {
-        // normalize to YYYY-MM-DDTHH:mm:00
-        const normalized = data.map(d => d.substring(0, 19));
-        setTakenSlots(normalized);
-      })
+    fetch(`${API_BASE}/products/${selectedProduct.productId}/staff`)
+      .then(r => r.json())
+      .then(setStaff)
       .catch(console.error);
-  }, [selectedStaff, selectedDate]);
+  }, [selectedProduct]);
+
+  /* ================= FETCH AVAILABILITY ================= */
+
+  useEffect(() => {
+    if (!selectedDate || staff.length === 0) return;
+
+    const load = async () => {
+      const map: Record<string, string[]> = {};
+
+      for (const s of staff) {
+        const res = await fetch(
+          `${API_BASE}/reservations/availability?employeeId=${s.staffId}&date=${selectedDate}`
+        );
+        const data: string[] = await res.json();
+        map[s.staffId] = data.map(d => d.substring(11, 16));
+      }
+
+      setTakenSlots(map);
+    };
+
+    load();
+  }, [selectedDate, staff]);
 
   /* ================= SLOT GENERATION ================= */
 
@@ -103,13 +104,11 @@ export default function NewReservation() {
     if (!selectedProduct) return [];
 
     const slots: string[] = [];
-    const startMinutes = 9 * 60;
-    const endMinutes = 18 * 60;
+    let current = 9 * 60;
+    const end = 18 * 60;
     const step = selectedProduct.durationMinutes;
 
-    let current = startMinutes;
-
-    while (current + step <= endMinutes) {
+    while (current + step <= end) {
       const h1 = Math.floor(current / 60);
       const m1 = current % 60;
       const h2 = Math.floor((current + step) / 60);
@@ -129,32 +128,20 @@ export default function NewReservation() {
     return slots;
   }
 
-  function isSlotTaken(slot: string): boolean {
-    if (!selectedDate) return false;
-
+  function isTaken(staffId: string, slot: string) {
     const start = slot.split(" - ")[0];
-    const iso = `${selectedDate}T${start}:00`;
-
-    return takenSlots.includes(iso);
+    return takenSlots[staffId]?.includes(start);
   }
 
   /* ================= SUBMIT ================= */
 
   async function handleSubmit() {
-    if (
-      !selectedBusiness ||
-      !selectedStaff ||
-      !selectedProduct ||
-      !selectedDate ||
-      !selectedTime
-    ) {
-      alert("Please fill all required fields");
+    if (!selectedStaff || !selectedTime || !selectedProduct) {
+      alert("Missing data");
       return;
     }
 
-    const startTime = new Date(
-      `${selectedDate}T${selectedTime.split(" - ")[0]}:00`
-    ).toISOString();
+    const start = `${selectedDate}T${selectedTime.split(" - ")[0]}:00`;
 
     const res = await fetch(`${API_BASE}/reservations`, {
       method: "POST",
@@ -163,13 +150,13 @@ export default function NewReservation() {
         registrationNumber: selectedBusiness,
         employeeId: selectedStaff,
         serviceProductId: selectedProduct.productId,
-        startTime,
+        startTime: new Date(start).toISOString(),
         durationMinutes: selectedProduct.durationMinutes,
         clientName,
         clientSurname,
         clientPhone,
-        notes,
-      }),
+        notes
+      })
     });
 
     if (!res.ok) {
@@ -179,13 +166,6 @@ export default function NewReservation() {
 
     alert("Appointment created");
     setSelectedTime("");
-
-    // refresh taken slots
-    const refreshed = await fetch(
-      `${API_BASE}/reservations/availability?employeeId=${selectedStaff}&date=${selectedDate}`
-    ).then(r => r.json());
-
-    setTakenSlots(refreshed.map((d: string) => d.substring(0, 19)));
   }
 
   /* ================= RENDER ================= */
@@ -195,14 +175,11 @@ export default function NewReservation() {
       <h1>Add appointment</h1>
 
       <div className="selectors">
-        <select
-          value={selectedBusiness}
-          onChange={e => setSelectedBusiness(e.target.value)}
-        >
+        <select onChange={e => setSelectedBusiness(e.target.value)}>
           <option value="">Select location</option>
           {businesses.map(b => (
             <option key={b.registrationNumber} value={b.registrationNumber}>
-              {b.name} ({b.location})
+              {b.name}
             </option>
           ))}
         </select>
@@ -222,68 +199,50 @@ export default function NewReservation() {
           ))}
         </select>
 
-        <input
-          type="date"
-          value={selectedDate}
-          onChange={e => setSelectedDate(e.target.value)}
-        />
+        <input type="date" onChange={e => setSelectedDate(e.target.value)} />
       </div>
 
-      <select
-        value={selectedStaff}
-        onChange={e => setSelectedStaff(e.target.value)}
-      >
-        <option value="">Select staff</option>
+      <div className="staff-columns">
         {staff.map(s => (
-          <option key={s.staffId} value={s.staffId}>
-            {s.firstName} {s.lastName}
-          </option>
+          <div key={s.staffId} className="staff-column">
+            <h3>{s.firstName} {s.lastName}</h3>
+
+            {generateSlots().map(slot => {
+              const taken = isTaken(s.staffId, slot);
+              const selected =
+                selectedStaff === s.staffId && selectedTime === slot;
+
+              return (
+                <button
+                  key={slot}
+                  disabled={taken}
+                  className={
+                    taken
+                      ? "slot taken"
+                      : selected
+                      ? "slot selected"
+                      : "slot"
+                  }
+                  onClick={() => {
+                    setSelectedStaff(s.staffId);
+                    setSelectedTime(slot);
+                  }}
+                >
+                  {slot}
+                </button>
+              );
+            })}
+          </div>
         ))}
-      </select>
-
-      <div className="slot-list">
-        {generateSlots().map(slot => {
-          const taken = isSlotTaken(slot);
-          const selected = selectedTime === slot;
-
-          return (
-            <button
-              key={slot}
-              disabled={taken}
-              className={`slot ${taken ? "taken" : ""} ${
-                selected ? "selected" : ""
-              }`}
-              onClick={() => setSelectedTime(slot)}
-            >
-              {slot}
-            </button>
-          );
-        })}
       </div>
 
       <div className="client-info">
-        <input
-          placeholder="Name"
-          value={clientName}
-          onChange={e => setClientName(e.target.value)}
-        />
-        <input
-          placeholder="Surname"
-          value={clientSurname}
-          onChange={e => setClientSurname(e.target.value)}
-        />
-        <input
-          placeholder="Phone"
-          value={clientPhone}
-          onChange={e => setClientPhone(e.target.value)}
-        />
+        <input placeholder="Name" onChange={e => setClientName(e.target.value)} />
+        <input placeholder="Surname" onChange={e => setClientSurname(e.target.value)} />
+        <input placeholder="Phone" onChange={e => setClientPhone(e.target.value)} />
       </div>
 
-      <textarea
-        placeholder="Notes"
-        value={notes}
-        onChange={e => setNotes(e.target.value)}
-      />
+      <textarea placeholder="Notes" onChange={e => setNotes(e.target.value)} />
 
       <button className="submit-btn" onClick={handleSubmit}>
         Add appointment
