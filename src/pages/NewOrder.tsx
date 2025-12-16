@@ -1,86 +1,26 @@
-import React, { useEffect, useState } from "react";
-import "./NewOrder.css";
+import React, { useState } from "react";
+import styles from "./NewOrder.module.css";
 import { ProductDto } from "../types/ProductDto";
 import { useNavigate } from "react-router-dom";
-
-interface OrderItem extends ProductDto {
-    quantity: number;
-}
+import { useBusiness } from "../types/BusinessContext";
+import { getProducts } from "../hooks/getProducts";
+import { createOrder, OrderItem } from "../hooks/createOrder";
 
 export default function NewOrder() {
-    const [products, setProducts] = useState<ProductDto[]>([]);
+    const { registrationNumber } = useBusiness();
+    const { products, loading, error } = getProducts(registrationNumber);
     const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
     const navigate = useNavigate();
 
-
     const goToOrders = async () => {
         try {
-            // 1️⃣ Create a new order
-            const createOrderResponse = await fetch("http://localhost:5089/orders", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    registrationNumber: "CATERING",
-                    customerId: null
-                })
-            });
-
-            if (!createOrderResponse.ok) {
-                throw new Error("Failed to create order");
-            }
-
-            const createdOrder = await createOrderResponse.json();
-            const orderId = createdOrder.orderId;
-
-            // 2️⃣ Add order lines
-            for (const item of orderItems) {
-                const lineResponse = await fetch(
-                    `http://localhost:5089/orders/${orderId}/lines`,
-                    {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({
-                            productId: item.productId,
-                            quantity: item.quantity,
-                            assignedStaffId: null,
-                            appointmentId: null,
-                            notes: null
-                        })
-                    }
-                );
-
-                if (!lineResponse.ok) {
-                    throw new Error(`Failed to add order line for ${item.name}`);
-                }
-            }
-
-            // 3️⃣ Navigate to Orders page
+            await createOrder(registrationNumber, orderItems);
             navigate("/orders");
-
-        } catch (error) {
-            console.error("Error placing order:", error);
+        } catch (err: any) {
+            console.error("Error placing order:", err);
             alert("Something went wrong while placing the order.");
         }
     };
-
-    // Fetch products from backend
-    useEffect(() => {
-        const fetchProducts = async () => {
-            try {
-                const response = await fetch("http://localhost:5089/products?type=ITEM");
-                const result = await response.json();
-                setProducts(result.data); // data array from backend
-            } catch (error) {
-                console.error("Error fetching products:", error);
-            }
-        };
-
-        fetchProducts();
-    }, []);
 
     const addToOrder = (product: ProductDto) => {
         setOrderItems(prev => {
@@ -119,33 +59,38 @@ export default function NewOrder() {
         0
     );
 
+    if (loading) return <p>Loading products...</p>;
+    if (error) return <p>Error: {error}</p>;
+
     return (
-        <div className="new-order-page">
-            <div className="new-order-container">
-                <div className="products-grid">
+        <div className={styles['new-order-page']}>
+            <div className={styles['new-order-container']}>
+                <div className={styles['products-grid']}>
                     {products.length === 0 && <p>Loading products...</p>}
                     {products.map(product => (
-                        <div key={product.productId} className="product-card">
-                            <div className="product-image">🧋</div> {/* Placeholder icon */}
-                            <div className="product-details">
-                                <div className="product-name">{product.name}</div>
-                                <div className="product-price">${product.basePrice.toFixed(2)}</div>
-                                <div className="product-type">{product.productType}</div>
+                        <div key={product.productId} className={styles['product-card']}>
+                            <div className={styles['product-image']}>🧋</div>
+                            <div className={styles['product-details']}>
+                                <div className={styles['product-info']}>
+                                    <div className={styles['product-name']}>{product.name}</div>
+                                    <div className={styles['product-description']}>{product.description}</div>
+                                </div>
+                                <div className={styles['product-price']}>${product.basePrice.toFixed(2)}</div>
                             </div>
-                            <button className="add-button" onClick={() => addToOrder(product)}>
+                            <button className={styles['add-button']} onClick={() => addToOrder(product)}>
                                 +
                             </button>
                         </div>
                     ))}
                 </div>
 
-                <div className="order-summary">
+                <div className={styles['order-summary']}>
                     <h2>Order Summary</h2>
                     {orderItems.length === 0 && <p>No items added</p>}
                     {orderItems.map(item => (
-                        <div key={item.productId} className="order-item">
+                        <div key={item.productId} className={styles['order-item']}>
                             <span>{item.name}</span>
-                            <div className="quantity-controls">
+                            <div className={styles['quantity-controls']}>
                                 <button onClick={() => decreaseQuantity(item.productId)}>-</button>
                                 <span>{item.quantity}</span>
                                 <button onClick={() => increaseQuantity(item.productId)}>+</button>
@@ -155,10 +100,10 @@ export default function NewOrder() {
                     ))}
                     {orderItems.length > 0 && (
                         <>
-                            <div className="total">
+                            <div className={styles['total']}>
                                 <strong>Total:</strong> ${totalPrice.toFixed(2)}
                             </div>
-                            <button className="place-order-btn" onClick={goToOrders}>
+                            <button className={styles['place-order-btn']} onClick={goToOrders}>
                                 Place Order
                             </button>
                         </>
