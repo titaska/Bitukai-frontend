@@ -2,6 +2,18 @@
 import { API_BASE } from "../constants/api";
 import { OrderDto } from "../types/OrderDto";
 
+export interface OriginalOrderLine {
+    orderLineId: string;
+    productId: string;
+}
+
+export interface OrderItem {
+    productId: string;
+    quantity: number;
+    orderLineId?: string;
+    basePrice?: number;
+}
+
 interface ProductNameMap {
     [productId: string]: string;
 }
@@ -11,6 +23,17 @@ export function getOrderDetails(orderId: string) {
     const [productNames, setProductNames] = useState<ProductNameMap>({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const orderItems: OrderItem[] = order?.lines.map(line => ({
+        productId: line.productId,
+        quantity: line.quantity,
+        orderLineId: line.orderLineId,
+        basePrice: line.unitPrice
+    })) ?? [];
+
+    const originalLines: OriginalOrderLine[] = order?.lines.map(line => ({
+        orderLineId: line.orderLineId,
+        productId: line.productId
+    })) ?? [];
 
     useEffect(() => {
         async function fetchOrderAndProducts() {
@@ -46,5 +69,5 @@ export function getOrderDetails(orderId: string) {
         fetchOrderAndProducts();
     }, [orderId]);
 
-    return { order, productNames, loading, error };
+    return { order, productNames, orderItems, originalLines, loading, error };
 }

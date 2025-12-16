@@ -1,21 +1,36 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import styles from "./NewOrder.module.css";
 import { useNavigate, useParams } from "react-router-dom";
 import { useBusiness } from "../types/BusinessContext";
-import { getOrderDetails } from "../hooks/getOrderDetails";
+import { getOrderDetails, OrderItem } from "../hooks/getOrderDetails";
 import { updateOrder } from "../hooks/updateOrder";
 import { getProducts } from "../hooks/getProducts";
 
 export default function EditOrder() {
     const { registrationNumber } = useBusiness();
     const { orderId } = useParams<{ orderId: string }>();
-    const { products} = getProducts(registrationNumber);
+    const { products } = getProducts(registrationNumber);
     const navigate = useNavigate();
 
-    const { orderItems, setOrderItems, originalLines, loading, error } = getOrderDetails(
-        orderId!,
-        registrationNumber
-    );
+    const { order, productNames: initialProductNames, originalLines, loading, error } = getOrderDetails(orderId!);
+
+    const [orderItemsState, setOrderItems] = useState<OrderItem[]>([]);
+    const [productNames, setProductNames] = useState<{ [key: string]: string }>({});
+    
+    useEffect(() => {
+        if (order) {
+            const initialItems: OrderItem[] = order.lines.map(line => ({
+                productId: line.productId,
+                quantity: line.quantity,
+                orderLineId: line.orderLineId,
+                basePrice: line.unitPrice,
+            }));
+            setOrderItems(initialItems);
+        }
+        if (initialProductNames) {
+            setProductNames(initialProductNames);
+        }
+    }, [order, initialProductNames]);
 
     const addToOrder = (product: any) => {
         setOrderItems(prev => {
@@ -27,7 +42,13 @@ export default function EditOrder() {
                         : i
                 );
             }
-            return [...prev, { ...product, quantity: 1 }];
+            
+            setProductNames(prevNames => ({
+                ...prevNames,
+                [product.productId]: product.name,
+            }));
+
+            return [...prev, { ...product, quantity: 1, basePrice: product.basePrice }];
         });
     };
 
@@ -45,7 +66,7 @@ export default function EditOrder() {
 
     const confirmEdit = async () => {
         try {
-            await updateOrder(orderId!, orderItems, originalLines);
+            await updateOrder(orderId!, orderItemsState, originalLines);
             navigate("/orders");
         } catch (err: any) {
             console.error("Failed to update order:", err);
@@ -53,14 +74,13 @@ export default function EditOrder() {
         }
     };
 
-    const totalPrice = orderItems.reduce(
-        (sum, i) => sum + i.basePrice * i.quantity,
+    const totalPrice = orderItemsState.reduce(
+        (sum, i) => sum + (i.basePrice ?? 0) * i.quantity,
         0
     );
 
     if (loading) return <p>Loading order...</p>;
     if (error) return <p>Error: {error}</p>;
-    
 
     return (
         <div className={styles["new-order-page"]}>
@@ -93,21 +113,19 @@ export default function EditOrder() {
                 <div className={styles["order-summary"]}>
                     <h2>Order Summary</h2>
 
-                    {orderItems.map(item => (
+                    {orderItemsState.map(item => (
                         <div key={item.productId} className={styles["order-item"]}>
-                            <span>{item.name}</span>
+                            <span>{productNames[item.productId] || "Unknown"}</span>
                             <div className={styles["quantity-controls"]}>
                                 <button onClick={() => decreaseQuantity(item.productId)}>-</button>
                                 <span>{item.quantity}</span>
                                 <button onClick={() => increaseQuantity(item.productId)}>+</button>
                             </div>
-                            <span>
-                                ${(item.basePrice * item.quantity).toFixed(2)}
-                            </span>
+                            <span>${((item.basePrice ?? 0) * item.quantity).toFixed(2)}</span>
                         </div>
                     ))}
 
-                    {orderItems.length > 0 && (
+                    {orderItemsState.length > 0 && (
                         <>
                             <div className={styles["total"]}>
                                 <strong>Total:</strong> ${totalPrice.toFixed(2)}

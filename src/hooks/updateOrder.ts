@@ -10,8 +10,7 @@ export async function updateOrder(
         const currentLineIds = new Set(
             orderItems.filter(i => i.orderLineId).map(i => i.orderLineId!)
         );
-
-        // Delete removed lines
+        
         for (const original of originalLines) {
             if (!currentLineIds.has(original.orderLineId)) {
                 await fetch(`${API_BASE}/orders/${orderId}/lines/${original.orderLineId}`, {
