@@ -1,12 +1,8 @@
 ﻿import { useEffect, useState } from "react";
 import { API_BASE } from "../constants/api";
+import { Product } from "../types/Product";
 
-export interface Product {
-    name: string;
-    description?: string;
-}
-
-export function getProductDetails(productIds: string[]) {
+export function useProductDetails(productIds: string[]) {
     const [productsMap, setProductsMap] = useState<Record<string, Product>>({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);

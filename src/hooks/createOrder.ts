@@ -1,14 +1,9 @@
 ﻿import { API_BASE } from "../constants/api";
-import { ProductDto } from "../types/ProductDto";
-
-export interface OrderItem extends ProductDto {
-    quantity: number;
-    notes?: string;
-}
+import { ProductItem } from "../types/ProductItem";
 
 export async function createOrder(
     registrationNumber: string,
-    orderItems: OrderItem[]
+    orderItems: ProductItem[]
 ) {
     try {
         const createOrderResponse = await fetch(`${API_BASE}/orders`, {

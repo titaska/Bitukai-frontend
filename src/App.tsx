@@ -1,13 +1,13 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
-import Orders from "./pages/Orders";
-import NewOrder from "./pages/NewOrder";
+import Orders from "./pages/order/Orders";
+import NewOrder from "./pages/newOrder/NewOrder";
 import EditOrder from "./pages/EditOrder";
 import Reservations from "./pages/Reservations";
 import NewReservation from "./pages/NewReservation";
 import Staff from "./pages/Staff";
 import Settings from "./pages/Settings";
-import PayOrder from "./pages/PayOrder";
+import PayOrder from "./pages/payOrder/PayOrder";
 import {Login} from "./pages/Login";
 import { JSX, useState } from "react";
 import { BusinessType } from "./types/business";

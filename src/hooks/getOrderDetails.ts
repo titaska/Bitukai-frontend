@@ -1,24 +1,11 @@
 ﻿import { useEffect, useState } from "react";
 import { API_BASE } from "../constants/api";
 import { OrderDto } from "../types/OrderDto";
+import { OrderItem } from "../types/OrderItem";
+import { OriginalOrderLine } from "../types/OriginalOrderLine";
+import { ProductNameMap } from "../types/ProductNameMap";
 
-export interface OriginalOrderLine {
-    orderLineId: string;
-    productId: string;
-}
-
-export interface OrderItem {
-    productId: string;
-    quantity: number;
-    orderLineId?: string;
-    basePrice?: number;
-}
-
-interface ProductNameMap {
-    [productId: string]: string;
-}
-
-export function getOrderDetails(orderId: string) {
+export function useOrderDetails(orderId: string) {
     const [order, setOrder] = useState<OrderDto | null>(null);
     const [productNames, setProductNames] = useState<ProductNameMap>({});
     const [loading, setLoading] = useState(true);

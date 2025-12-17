@@ -1,15 +1,16 @@
 import React, { useState } from "react";
 import styles from "./NewOrder.module.css";
-import { ProductDto } from "../types/ProductDto";
+import { ProductDto } from "../../types/ProductDto";
 import { useNavigate } from "react-router-dom";
-import { useBusiness } from "../types/BusinessContext";
-import { getProducts } from "../hooks/getProducts";
-import { createOrder, OrderItem } from "../hooks/createOrder";
+import { useBusiness } from "../../types/BusinessContext";
+import { useProducts } from "../../hooks/getProducts";
+import { createOrder } from "../../hooks/createOrder";
+import { ProductItem } from "../../types/ProductItem";
 
 export default function NewOrder() {
     const { registrationNumber } = useBusiness();
-    const { products, loading, error } = getProducts(registrationNumber);
-    const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+    const { products, loading, error } = useProducts(registrationNumber);
+    const [orderItems, setOrderItems] = useState<ProductItem[]>([]);
     const navigate = useNavigate();
 
     const goToOrders = async () => {

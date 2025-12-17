@@ -1,19 +1,19 @@
 import React from "react";
 import styles from "./Orders.module.css";
 import { useNavigate } from "react-router-dom";
-import { useBusiness } from "../types/BusinessContext";
-import { getOrders } from "../hooks/getOrders";
-import { getProductDetails } from "../hooks/getProductDetails";
-import { calculateOrder } from "../hooks/calculateOrder";
+import { useBusiness } from "../../types/BusinessContext";
+import { useOrders } from "../../hooks/getOrders";
+import { useProductDetails } from "../../hooks/getProductDetails";
+import { calculateOrder } from "../../hooks/calculateOrder";
 
 export default function Orders() {
     const { registrationNumber } = useBusiness();
-    const { orders, setOrders, loading, error } = getOrders(registrationNumber);
+    const { orders, setOrders, loading, error } = useOrders(registrationNumber);
 
     const productIds = Array.from(
         new Set(orders.flatMap(order => order.lines?.map(line => line.productId) || []))
     );
-    const { productsMap } = getProductDetails(productIds);
+    const { productsMap } = useProductDetails(productIds);
 
     const navigate = useNavigate();
 

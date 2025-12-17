@@ -1,9 +1,9 @@
 ﻿import { useEffect, useState } from "react";
 import { OrderDto } from "../types/OrderDto";
 import { API_BASE } from "../constants/api";
-import { filterByRegistrationNumber } from "./filterByBusinessReg";
+import { filterByRegistrationNumber } from "../utils/filterByBusinessReg";
 
-export function getOrders(registrationNumber: string) {
+export function useOrders(registrationNumber: string) {
     const [orders, setOrders] = useState<OrderDto[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);

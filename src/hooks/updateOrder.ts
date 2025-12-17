@@ -1,5 +1,6 @@
 ﻿import { API_BASE } from "../constants/api";
-import { OrderItem, OriginalOrderLine } from "./getOrderDetails";
+import { OrderItem } from "../types/OrderItem";
+import { OriginalOrderLine } from "../types/OriginalOrderLine";
 
 export async function updateOrder(
     orderId: string,

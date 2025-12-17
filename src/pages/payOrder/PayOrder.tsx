@@ -1,13 +1,13 @@
 ﻿import { useNavigate, useParams } from "react-router-dom";
-import { getOrderDetails } from "../hooks/getOrderDetails";
-import { closeOrder } from "../hooks/closeOrder";
+import { useOrderDetails } from "../../hooks/getOrderDetails";
+import { closeOrder } from "../../hooks/closeOrder";
 import styles from "./PayOrder.module.css";
 
 export default function PayOrder() {
     const { orderId } = useParams<{ orderId: string }>();
     const navigate = useNavigate();
 
-    const { order, productNames, loading, error } = getOrderDetails(orderId!);
+    const { order, productNames, loading, error } = useOrderDetails(orderId!);
 
     const payOrder = async () => {
         if (!order) return;

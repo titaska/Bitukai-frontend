@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from "react";
-import styles from "./NewOrder.module.css";
+import styles from "./newOrder/NewOrder.module.css";
 import { useNavigate, useParams } from "react-router-dom";
 import { useBusiness } from "../types/BusinessContext";
-import { getOrderDetails, OrderItem } from "../hooks/getOrderDetails";
+import { useOrderDetails } from "../hooks/getOrderDetails";
+import { OrderItem } from "../types/OrderItem";
 import { updateOrder } from "../hooks/updateOrder";
-import { getProducts } from "../hooks/getProducts";
+import { useProducts } from "../hooks/getProducts";
 
 export default function EditOrder() {
     const { registrationNumber } = useBusiness();
     const { orderId } = useParams<{ orderId: string }>();
-    const { products } = getProducts(registrationNumber);
+    const { products } = useProducts(registrationNumber);
     const navigate = useNavigate();
 
-    const { order, productNames: initialProductNames, originalLines, loading, error } = getOrderDetails(orderId!);
+    const { order, productNames: initialProductNames, originalLines, loading, error } = useOrderDetails(orderId!);
 
     const [orderItemsState, setOrderItems] = useState<OrderItem[]>([]);
     const [productNames, setProductNames] = useState<{ [key: string]: string }>({});

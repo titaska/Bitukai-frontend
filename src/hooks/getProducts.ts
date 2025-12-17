@@ -1,9 +1,9 @@
 ﻿import { useEffect, useState } from "react";
 import { API_BASE } from "../constants/api";
-import { filterByRegistrationNumber } from "./filterByBusinessReg";
+import { filterByRegistrationNumber } from "../utils/filterByBusinessReg";
 import { ProductDto } from "../types/ProductDto";
 
-export function getProducts(registrationNumber: string) {
+export function useProducts(registrationNumber: string) {
     const [products, setProducts] = useState<ProductDto[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
