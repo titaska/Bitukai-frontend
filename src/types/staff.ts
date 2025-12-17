@@ -11,3 +11,10 @@ export interface StaffDto {
   role: StaffRole;
   hireDate: string;
 }
+
+
+export interface ReservationStaff {
+  staffId: string;
+  firstName: string;
+  lastName: string;
+}
