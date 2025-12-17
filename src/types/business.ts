@@ -10,3 +10,9 @@ export interface BusinessDto {
   currencyCode: string;
   type: BusinessType;
 };
+
+export interface ReservationBusiness {
+  registrationNumber: string;
+  name: string;
+  location: string;
+}

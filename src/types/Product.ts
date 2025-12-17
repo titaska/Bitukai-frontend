@@ -9,3 +9,10 @@ export interface Product {
   taxCode: string;
   status: boolean;
 }
+
+export interface ReservationProduct {
+  productId: string;
+  name: string;
+  durationMinutes: number;
+}
+

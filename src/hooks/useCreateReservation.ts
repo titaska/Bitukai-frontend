@@ -1,4 +1,4 @@
-import { API_BASE } from "../api/apiBase";
+import { API_BASE } from "../constants/api";
 
 export async function createReservation(payload: any) {
   const res = await fetch(`${API_BASE}/reservations`, {

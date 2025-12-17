@@ -1,41 +1,26 @@
 import React, { useEffect, useState } from "react";
 import "./NewReservation.css";
-import { API_BASE } from "../../api/apiBase";
+import { API_BASE } from "../../constants/api";
 
 import { createReservation } from "../../hooks/useCreateReservation";
 import { getTakenSlots } from "../../hooks/useTakenSlots";
 
-/* ================= TYPES ================= */
+import { ReservationBusiness } from "../../types/business";
+import { ReservationStaff } from "../../types/staff";
+import { ReservationProduct } from "../../types/product";
 
-interface Business {
-  registrationNumber: string;
-  name: string;
-  location: string;
-}
-
-interface Staff {
-  staffId: string;
-  firstName: string;
-  lastName: string;
-}
-
-interface Product {
-  productId: string;
-  name: string;
-  durationMinutes: number;
-}
 
 /* ================= COMPONENT ================= */
 
 export default function NewReservation() {
   /* ---------- DATA ---------- */
-  const [businesses, setBusinesses] = useState<Business[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [staff, setStaff] = useState<Staff[]>([]);
+  const [businesses, setBusinesses] = useState<ReservationBusiness[]>([]);
+  const [products, setProducts] = useState<ReservationProduct[]>([]);
+  const [staff, setStaff] = useState<ReservationStaff[]>([]);
 
   /* ---------- SELECTION ---------- */
   const [selectedBusiness, setSelectedBusiness] = useState("");
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<ReservationProduct | null>(null);
   const [selectedDate, setSelectedDate] = useState("");
 
   /* ---------- TIME ---------- */
