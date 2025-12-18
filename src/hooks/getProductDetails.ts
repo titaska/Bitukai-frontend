@@ -8,31 +8,24 @@ export function useProductDetails(productIds: string[]) {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!productIds.length) {
-            setLoading(false);
-            return;
-        }
+        if (!productIds.length) return;
 
         async function fetchProducts() {
-            const products: Record<string, Product> = {};
-            try {
-                await Promise.all(
-                    productIds.map(async (id) => {
-                        try {
-                            const res = await fetch(`${API_BASE}/products/${id}`);
-                            if (!res.ok) return;
-                            const prod = await res.json();
-                            products[id] = prod;
-                        } catch (err) {
-                            console.error(`Failed to fetch product ${id}`, err);
-                        }
-                    })
-                );
-                setProductsMap(products);
-            } catch (err: any) {
-                setError(err.message);
-            } finally {
-                setLoading(false);
+            const missingIds = productIds.filter(id => !productsMap[id]);
+            if (!missingIds.length) return;
+
+            const fetched: Record<string, Product> = {};
+
+            await Promise.all(
+                missingIds.map(async (id) => {
+                    const res = await fetch(`${API_BASE}/products/${id}`);
+                    if (!res.ok) return;
+                    fetched[id] = await res.json();
+                })
+            );
+
+            if (Object.keys(fetched).length) {
+                setProductsMap(prev => ({ ...prev, ...fetched }));
             }
         }
 
