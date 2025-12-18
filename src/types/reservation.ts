@@ -1,14 +1,15 @@
 export interface ReservationInfoDto {
+  productName: string;
+  staffName: string;
+  staffSurname: string;
   appointmentId: string;
   registrationNumber: string;
   serviceProductId: string;
-  serviceName: string;
   employeeId: string;
-  employeeName: string;
-  employeeSurname: string;
   startTime: string;
   durationMinutes: number;
   status: string;
+  orderId: string | null;
   notes: string | null;
   clientName: string;
   clientSurname: string;

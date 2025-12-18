@@ -1,66 +1,58 @@
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {Box, Typography, Stack} from "@mui/material";
 import interactionPlugin from "@fullcalendar/interaction";
 import { useNavigate } from "react-router-dom";
 import "./Reservations.css";
-import { getReservations } from "../../hooks/getReservations";
+import { getReservationsWithDetails } from "../../hooks/getReservationsWithDetails";
 import { ReservationInfoDto } from "../../types/reservation";
 import EventInfo from "../../components/EventInfo";
+import { text } from "stream/consumers";
+import { updateReservationStatus } from "../../hooks/updateReservationStatus";
 
 export default function Reservations() {
-  //const [events, setEvents] = useState<any[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
   const navigate = useNavigate();
   const [selectedReservation, setSelectedReservation] = useState<ReservationInfoDto | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
 
-  // useEffect(() => {
-  //   const fetchReservations = async () => {
-  //     try {
-  //       const reservations = await getReservations();
-  //       const calendarEvents = reservations.map((reservation) => {
-  //         const startTime = new Date(reservation.startTime);
-  //         const endTime = new Date(startTime.getTime() + reservation.durationMinutes * 60000);
+  const fetchReservations = useCallback( async () => {
+    try {
+      const reservations = await getReservationsWithDetails();
+      const calendarEvents = reservations.map((reservation) => {
+        const startTime = new Date(reservation.startTime);
+        const endTime = new Date(startTime.getTime() + reservation.durationMinutes * 60000);
 
-  //         return {
-  //           id: reservation.appointmentId,
-  //           title: `${reservation.clientName} ${reservation.clientSurname}`,
-  //           start: startTime.toISOString(),
-  //           end: endTime.toISOString(),
-  //           backgroundColor: "#a2f5d0",
-  //         };
-  //       });
-  //       setEvents(calendarEvents);
-  //     }
-  //     catch (error) {
-  //       console.error("Failed to fetch reservations: ", error);
-  //     }
-  //   };
+        return {
+          id: reservation.appointmentId,
+          title: `${reservation.staffName} ${reservation.staffSurname}`,
+          start: startTime.toISOString(),
+          end: endTime.toISOString(),
+          extendedProps: { reservation }
+        };
+      });
+      setEvents(calendarEvents);
+    }
+    catch (error) {
+      console.error("Failed to fetch reservations: ", error);
+    }
+  }, []);
 
-  //   fetchReservations();
-  // }, []);
-
-  const events = [
-    { id: "1", title: "Staff 1", start: "2025-12-13T14:00:00", end: "2025-12-13T14:30:00", backgroundColor: "#a2f5d0" },
-    { id: "2", title: "Staff 2", start: "2025-12-13T14:00:00", end: "2025-12-13T14:30:00", backgroundColor: "#f5e6a2" },
-    { id: "3", title: "Staff 3", start: "2025-12-13T14:00:00", end: "2025-12-13T14:30:00", backgroundColor: "#7fd97a" },
-    { id: "4", title: "Staff 1", start: "2025-12-13T14:30:00", end: "2025-12-13T15:00:00", backgroundColor: "#a2f5d0" },
-    { id: "5", title: "Staff 2", start: "2025-12-13T14:30:00", end: "2025-12-13T15:00:00", backgroundColor: "#f5e6a2" },
-    { id: "6", title: "Staff 1", start: "2025-12-13T15:00:00", end: "2025-12-13T15:30:00", backgroundColor: "#a2f5d0" },
-    { id: "7", title: "Staff 1", start: "2025-12-13T15:30:00", end: "2025-12-13T16:00:00", backgroundColor: "#a2f5d0" }
-  ];
+  useEffect(() => {
+    fetchReservations();
+  }, [fetchReservations]);
 
   function renderEvent(eventInfo: any) {
     return (
       <Box
         sx={{
-          backgroundColor: eventInfo.event.backgroundColor,
+          backgroundColor: "#5A5883",
           borderRadius: "10px",
           padding: "8px 5px",
           fontSize: "12px",
-          color: "#333",
+          color: "#FFFFFF",
           display: "inline-block",
           width: "100%",
         }}
@@ -71,25 +63,8 @@ export default function Reservations() {
   }
 
   const handleEventClick = (clickInfo: any) => {
-    // For now, with mock data, you'll need to create a mock reservation
-    // When using real data: setSelectedReservation(clickInfo.event.extendedProps.reservation);
-    const mockReservation: ReservationInfoDto = {
-      appointmentId: clickInfo.event.id,
-      registrationNumber: "REG123",
-      serviceProductId: "SVC001",
-      serviceName: "Men's Haircut",
-      employeeId: "EMP001",
-      employeeName: "Alice",
-      employeeSurname: "Smith",
-      startTime: clickInfo.event.start.toISOString(),
-      durationMinutes: 30,
-      status: "BOOKED",
-      notes: "Sample reservation",
-      clientName: "John",
-      clientSurname: "Doe",
-      clientPhone: "+370 600 00000"
-    };
-    setSelectedReservation(mockReservation);
+    const reservation: ReservationInfoDto = clickInfo.event.extendedProps.reservation;
+    setSelectedReservation(reservation);
     setOpenDialog(true);
   };
 
@@ -99,10 +74,15 @@ export default function Reservations() {
     setOpenDialog(false);
   };
 
-  const handleDelete = (appointmentId: string) => {
-    console.log("Delete reservation:", appointmentId);
-    // Implement delete logic
-    setOpenDialog(false);
+  const handleDelete = async (appointmentId: string) => {
+    try {
+      await updateReservationStatus({ appointmentId, status: "CANCELLED" });
+      await fetchReservations();
+    } catch (error) {
+      console.error("Failed to cancel reservation: ", error);
+    } finally {
+      setOpenDialog(false);
+    }
   };
 
   return (

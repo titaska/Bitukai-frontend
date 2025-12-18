@@ -21,11 +21,11 @@ export default function EventInfo({ open, onClose, reservation, onEdit, onDelete
       <DialogContent sx={{ display: 'flex', flexDirection: 'row', gap: 15 }}>
         <Stack spacing={2}>
           <CustomBox title="Staff">
-            {reservation.employeeName} {reservation.employeeSurname}
+            {reservation.staffName} {reservation.staffSurname}
           </CustomBox>
 
           <CustomBox title="Service">
-            {reservation.serviceName}
+            {reservation.productName}
           </CustomBox>
 
           <CustomBox title="Date & Time">
