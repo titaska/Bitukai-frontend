@@ -1,22 +1,20 @@
 import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import "./EditReservation.css";
 import { API_BASE } from "../../constants/api";
-
-import { createReservation } from "../../hooks/useCreateReservation";
+import { updateReservation } from "../../hooks/updateReservation";
 import { getTakenSlots } from "../../hooks/useTakenSlots";
 
 import { ReservationBusiness } from "../../types/business";
 import { ReservationStaff } from "../../types/staff";
 import { ReservationProduct } from "../../types/Product";
 import { Reservation } from "../../types/reservation";
-
 import { useBusiness } from "../../types/BusinessContext";
 import { filterByRegistrationNumber } from "../../utils/filterByRegistrationNumber";
 
 
 /* ================= COMPONENT ================= */
-
-export default function NewReservation() {
+export default function EditReservation() {
   /* ---------- DATA ---------- */
   const [businesses, setBusinesses] = useState<ReservationBusiness[]>([]);
   const [products, setProducts] = useState<ReservationProduct[]>([]);
@@ -54,12 +52,9 @@ export default function NewReservation() {
 
   const today = new Date().toISOString().split("T")[0]; 
 
-
-
-
+  const { appointmentId } = useParams<{ appointmentId: string }>();
 
   /* ================= FETCH BUSINESS ================= */
-
   useEffect(() => {
     fetch(`${API_BASE}/business`)
       .then(r => r.json())
@@ -68,7 +63,6 @@ export default function NewReservation() {
   }, []);
 
   /* ================= FETCH PRODUCTS ================= */
-
   useEffect(() => {
     fetch(`${API_BASE}/products`)
       .then(r => r.json())
@@ -77,7 +71,6 @@ export default function NewReservation() {
   }, []);
 
   /* ================= FETCH STAFF FOR SERVICE ================= */
-
   useEffect(() => {
     if (!selectedProduct) return;
 
@@ -88,9 +81,8 @@ export default function NewReservation() {
   }, [selectedProduct]);
 
   /* ================= FETCH AVAILABILITY ================= */
-
-      useEffect(() => {
-  if (!selectedDate || staff.length === 0) return;
+  useEffect(() => {
+    if (!selectedDate || staff.length === 0) return;
 
     const load = async () => {
       const all: Reservation[] = [];
@@ -101,14 +93,13 @@ export default function NewReservation() {
       }
 
         setTakenSlots(all);
-      };
+    };
 
-      load();
-    }, [selectedDate, staff]);
+    load();
+  }, [selectedDate, staff]);
 
 
   /* ================= SLOT GENERATION ================= */
-
   function generateSlots(): string[] {
     if (!selectedProduct) return [];
 
@@ -138,46 +129,42 @@ export default function NewReservation() {
   }
 
   function timeToMinutes(time: string) {
-  const [h, m] = time.split(":").map(Number);
-  return h * 60 + m;
+    const [h, m] = time.split(":").map(Number);
+    return h * 60 + m;
   }
 
 
   function isTaken(staffId: string, slot: string) {
-  const [from, to] = slot.split(" - ");
+    const [from, to] = slot.split(" - ");
 
-  const slotStart = timeToMinutes(from);
-  const slotEnd = timeToMinutes(to);
+    const slotStart = timeToMinutes(from);
+    const slotEnd = timeToMinutes(to);
 
     return takenSlots.some(r => {
-    if (r.employeeId !== staffId) return false;
+      if (r.employeeId !== staffId) return false;
 
-    const start = new Date(r.startTime);
-    const localMinutes =
-      start.getHours() * 60 + start.getMinutes();
+      const start = new Date(r.startTime);
+      const localMinutes =
+        start.getHours() * 60 + start.getMinutes();
 
-    const end = localMinutes + r.durationMinutes;
+      const end = localMinutes + r.durationMinutes;
 
-    // overlap check
-    return slotStart < end && slotEnd > localMinutes;
+      // overlap check
+      return slotStart < end && slotEnd > localMinutes;
     });
   }
 
 
   /* ================= SUBMIT ================= */
-
-  
-
   async function handleSubmit() {
-  if (!selectedStaff || !selectedTime || !selectedProduct) {
-    alert("Missing data");
-    return;
-  }
+    if (!selectedStaff || !selectedTime || !selectedProduct || !appointmentId) {
+      alert("Missing data");
+      return;
+    }
 
-  const start = `${selectedDate}T${selectedTime.split(" - ")[0]}:00`;
+    const start = `${selectedDate}T${selectedTime.split(" - ")[0]}:00`;
 
-  try {
-    await createReservation({
+    const updatedReservation = {
       registrationNumber: selectedBusiness,
       employeeId: selectedStaff,
       serviceProductId: selectedProduct.productId,
@@ -187,18 +174,20 @@ export default function NewReservation() {
       clientSurname,
       clientPhone,
       notes
-    });
+    }
 
-    alert("Appointment created");
-    setSelectedTime("");
-  } catch {
-    alert("Failed to add appointment");
-  }
+    try {
+      await updateReservation(appointmentId, updatedReservation);
+
+      alert("Appointment updated");
+      setSelectedTime("");
+    } catch {
+      alert("Failed to update appointment");
+    }
   }
 
 
   /* ================= RENDER ================= */
-
   return (
     <div className="reservation-container">
       <h1>Edit appointment</h1>
@@ -281,7 +270,7 @@ export default function NewReservation() {
       <textarea placeholder="Notes" onChange={e => setNotes(e.target.value)} />
 
       <button className="submit-btn" onClick={handleSubmit}>
-        Confirm appointment
+        Update appointment
       </button>
     </div>
   );
