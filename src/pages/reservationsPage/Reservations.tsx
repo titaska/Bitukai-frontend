@@ -1,7 +1,7 @@
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useContext } from "react";
 import {Box, Typography, Stack} from "@mui/material";
 import interactionPlugin from "@fullcalendar/interaction";
 import { useNavigate } from "react-router-dom";
@@ -9,8 +9,9 @@ import "./Reservations.css";
 import { getReservationsWithDetails } from "../../hooks/getReservationsWithDetails";
 import { ReservationInfoDto } from "../../types/reservation";
 import EventInfo from "../../components/EventInfo";
-import { text } from "stream/consumers";
 import { updateReservationStatus } from "../../hooks/updateReservationStatus";
+import { filterByRegistrationNumber } from "../../utils/filterByBusinessReg";
+import { BusinessContext } from '../../types/BusinessContext';
 
 export default function Reservations() {
   const [events, setEvents] = useState<any[]>([]);
@@ -18,10 +19,13 @@ export default function Reservations() {
   const [selectedReservation, setSelectedReservation] = useState<ReservationInfoDto | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
 
+  const { registrationNumber } = useContext(BusinessContext);
+
   const fetchReservations = useCallback( async () => {
     try {
       const reservations = await getReservationsWithDetails();
-      const calendarEvents = reservations.map((reservation) => {
+      const filteredReservations = filterByRegistrationNumber(reservations, registrationNumber)
+      const calendarEvents = filteredReservations.map((reservation) => {
         const startTime = new Date(reservation.startTime);
         const endTime = new Date(startTime.getTime() + reservation.durationMinutes * 60000);
 
