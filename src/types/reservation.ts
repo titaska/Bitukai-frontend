@@ -23,3 +23,8 @@ export interface EventInfoProps {
   onEdit: (reservation: ReservationInfoDto) => void;
   onDelete: (appointmentId: string) => void;
 }
+export interface Reservation {
+  employeeId: string;
+  startTime: string;
+  durationMinutes: number;
+}
