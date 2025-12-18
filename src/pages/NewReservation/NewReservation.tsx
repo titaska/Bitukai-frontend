@@ -7,7 +7,7 @@ import { getTakenSlots } from "../../hooks/useTakenSlots";
 
 import { ReservationBusiness } from "../../types/business";
 import { ReservationStaff } from "../../types/staff";
-import { ReservationProduct } from "../../types/product";
+import { ReservationProduct } from "../../types/Product";
 
 
 /* ================= COMPONENT ================= */
