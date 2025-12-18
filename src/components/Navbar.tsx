@@ -5,23 +5,23 @@ import {
   Settings,
   Users,
   ClipboardPlus,
-  ShoppingCart
+  ClipboardList,
 } from "lucide-react";
 import { NavbarProps } from "../types/navbar";
 
 export default function Navbar({ businessType, userRole }: NavbarProps) {
   const cateringLinks = [
-    { to: "/", icon: <ShoppingCart size={20} />, roles: ["1", "2", "3"] },
-    { to: "/new-order", icon: <ClipboardPlus size={20} />, roles: ["1", "2", "3"] },
-    { to: "/staff", icon: <Users size={20} />, roles: ["2", "3"] },
-    { to: "/settings", icon: <Settings size={20} />, roles: ["3"] },
+      { to: "/", icon: <ClipboardList size={20} />, roles: ["STAFF", "OWNER", "SUPERADMIN"] },
+      { to: "/new-order", icon: <ClipboardPlus size={20} />, roles: ["STAFF", "OWNER", "SUPERADMIN"] },
+      { to: "/staff", icon: <Users size={20} />, roles: ["OWNER", "SUPERADMIN"] },
+      { to: "/settings", icon: <Settings size={20} />, roles: ["SUPERADMIN"] },
   ];
 
   const beautyLinks = [
-    { to: "/", icon: <Calendar size={20} />, roles: ["1", "2", "3"] },
-    { to: "/new-reservation", icon: <ClipboardPlus size={20} />, roles: ["1", "2", "3"] },
-    { to: "/staff", icon: <Users size={20} />, roles: ["2", "3"] },
-    { to: "/settings", icon: <Settings size={20} />, roles: ["3"] },
+    { to: "/", icon: <Calendar size={20} />, roles: ["STAFF", "OWNER", "SUPERADMIN"] },
+    { to: "/new-reservation", icon: <ClipboardPlus size={20} />, roles: ["STAFF", "OWNER", "SUPERADMIN"] },
+    { to: "/staff", icon: <Users size={20} />, roles: ["OWNER", "SUPERADMIN"] },
+    { to: "/settings", icon: <Settings size={20} />, roles: ["SUPERADMIN"] },
   ];
 
   const allLinks = businessType === "CATERING" ? cateringLinks : beautyLinks;
