@@ -52,6 +52,9 @@ export default function NewReservation() {
   registrationNumber
   );
 
+  const today = new Date().toISOString().split("T")[0]; 
+
+
 
 
 
@@ -226,7 +229,13 @@ export default function NewReservation() {
 
         </select>
 
-        <input type="date" onChange={e => setSelectedDate(e.target.value)} />
+        <input
+            type="date"
+            value={selectedDate}
+            min={today}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            />
+
       </div>
 
       <div className="staff-columns">
