@@ -1,6 +1,6 @@
 ﻿import { useEffect, useState } from "react";
 import { API_BASE } from "../constants/api";
-import { filterByRegistrationNumber } from "../utils/filterByBusinessReg";
+import { filterByRegistrationNumber } from "../utils/filterByRegistrationNumber";
 import { ProductDto } from "../types/ProductDto";
 
 export function useProducts(registrationNumber: string) {

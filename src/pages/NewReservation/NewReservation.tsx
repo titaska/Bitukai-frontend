@@ -7,7 +7,11 @@ import { getTakenSlots } from "../../hooks/useTakenSlots";
 
 import { ReservationBusiness } from "../../types/business";
 import { ReservationStaff } from "../../types/staff";
-import { ReservationProduct } from "../../types/product";
+import { ReservationProduct } from "../../types/Product";
+import { Reservation } from "../../types/reservation";
+
+import { useBusiness } from "../../types/BusinessContext";
+import { filterByRegistrationNumber } from "../../utils/filterByRegistrationNumber";
 
 
 /* ================= COMPONENT ================= */
@@ -24,7 +28,7 @@ export default function NewReservation() {
   const [selectedDate, setSelectedDate] = useState("");
 
   /* ---------- TIME ---------- */
-  const [takenSlots, setTakenSlots] = useState<Record<string, string[]>>({});
+  const [takenSlots, setTakenSlots] = useState<Reservation[]>([]);
   const [selectedStaff, setSelectedStaff] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
 
@@ -33,6 +37,23 @@ export default function NewReservation() {
   const [clientSurname, setClientSurname] = useState("");
   const [clientPhone, setClientPhone] = useState("");
   const [notes, setNotes] = useState("");
+
+  const { registrationNumber } = useBusiness();
+  const visibleBusinesses = filterByRegistrationNumber(
+  businesses,
+  registrationNumber
+  );
+  const visibleProducts = filterByRegistrationNumber(
+  products,
+  registrationNumber
+  );
+  const visibleStaff = filterByRegistrationNumber(
+  staff,
+  registrationNumber
+  );
+
+
+
 
   /* ================= FETCH BUSINESS ================= */
 
@@ -66,21 +87,22 @@ export default function NewReservation() {
   /* ================= FETCH AVAILABILITY ================= */
 
       useEffect(() => {
-      if (!selectedDate || staff.length === 0) return;
+  if (!selectedDate || staff.length === 0) return;
 
-      const load = async () => {
-        const map: Record<string, string[]> = {};
+    const load = async () => {
+      const all: Reservation[] = [];
 
-       for (const s of staff) {
-          const slots = await getTakenSlots(s.staffId, selectedDate);
-          map[s.staffId] = slots.map(d => d.substring(11, 16));
-        }
+      for (const s of staff) {
+        const reservations = await getTakenSlots(s.staffId, selectedDate);
+        all.push(...reservations);
+      }
 
-        setTakenSlots(map);
+        setTakenSlots(all);
       };
 
       load();
     }, [selectedDate, staff]);
+
 
   /* ================= SLOT GENERATION ================= */
 
@@ -112,10 +134,32 @@ export default function NewReservation() {
     return slots;
   }
 
-  function isTaken(staffId: string, slot: string) {
-    const start = slot.split(" - ")[0];
-    return takenSlots[staffId]?.includes(start);
+  function timeToMinutes(time: string) {
+  const [h, m] = time.split(":").map(Number);
+  return h * 60 + m;
   }
+
+
+  function isTaken(staffId: string, slot: string) {
+  const [from, to] = slot.split(" - ");
+
+  const slotStart = timeToMinutes(from);
+  const slotEnd = timeToMinutes(to);
+
+    return takenSlots.some(r => {
+    if (r.employeeId !== staffId) return false;
+
+    const start = new Date(r.startTime);
+    const localMinutes =
+      start.getHours() * 60 + start.getMinutes();
+
+    const end = localMinutes + r.durationMinutes;
+
+    // overlap check
+    return slotStart < end && slotEnd > localMinutes;
+    });
+  }
+
 
   /* ================= SUBMIT ================= */
 
@@ -159,10 +203,10 @@ export default function NewReservation() {
       <div className="selectors">
         <select onChange={e => setSelectedBusiness(e.target.value)}>
           <option value="">Select location</option>
-          {businesses.map(b => (
-            <option key={b.registrationNumber} value={b.registrationNumber}>
-              {b.name}
-            </option>
+          {visibleBusinesses.map(b => (
+          <option key={b.registrationNumber} value={b.registrationNumber}>
+          {b.name} ({b.location})
+          </option>
           ))}
         </select>
 
@@ -174,18 +218,19 @@ export default function NewReservation() {
           }
         >
           <option value="">Select service</option>
-          {products.map(p => (
-            <option key={p.productId} value={p.productId}>
-              {p.name} ({p.durationMinutes} min)
-            </option>
+          {visibleProducts.map(p => (
+          <option key={p.productId} value={p.productId}>
+          {p.name} ({p.durationMinutes} min)
+          </option>
           ))}
+
         </select>
 
         <input type="date" onChange={e => setSelectedDate(e.target.value)} />
       </div>
 
       <div className="staff-columns">
-        {staff.map(s => (
+        {visibleStaff.map(s => (
           <div key={s.staffId} className="staff-column">
             <h3>{s.firstName} {s.lastName}</h3>
 

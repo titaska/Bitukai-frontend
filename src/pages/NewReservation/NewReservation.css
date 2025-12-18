@@ -44,9 +44,10 @@
 }
 
 .slot.taken {
-  background: #d6d6d6;
-  color: #777;
+  background-color: #e5e7eb;
+  color: #9ca3af;
   cursor: not-allowed;
+  text-decoration: line-through;
 }
 
 .slot.taken.selected {
