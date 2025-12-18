@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import "./NewReservation.css";
+import React, { useEffect, useState } from "react";
+import "./EditReservation.css";
 import { API_BASE } from "../../constants/api";
 
 import { createReservation } from "../../hooks/useCreateReservation";
@@ -201,7 +201,7 @@ export default function NewReservation() {
 
   return (
     <div className="reservation-container">
-      <h1>Add appointment</h1>
+      <h1>Edit appointment</h1>
 
       <div className="selectors">
         <select onChange={e => setSelectedBusiness(e.target.value)}>
@@ -281,7 +281,7 @@ export default function NewReservation() {
       <textarea placeholder="Notes" onChange={e => setNotes(e.target.value)} />
 
       <button className="submit-btn" onClick={handleSubmit}>
-        Add appointment
+        Confirm appointment
       </button>
     </div>
   );

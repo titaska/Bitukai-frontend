@@ -5,15 +5,15 @@ import { useState, useEffect, useCallback, useContext } from "react";
 import {Box, Typography, Stack} from "@mui/material";
 import interactionPlugin from "@fullcalendar/interaction";
 import { useNavigate } from "react-router-dom";
-import "./Reservations.css";
+import "./Calendar.css";
 import { getReservationsWithDetails } from "../../hooks/getReservationsWithDetails";
 import { ReservationInfoDto } from "../../types/reservation";
 import EventInfo from "../../components/EventInfo";
 import { updateReservationStatus } from "../../hooks/updateReservationStatus";
-import { filterByRegistrationNumber } from "../../utils/filterByBusinessReg";
+import { filterByRegistrationNumber } from "../../utils/filterByRegistrationNumber";
 import { BusinessContext } from '../../types/BusinessContext';
 
-export default function Reservations() {
+export default function Calendar() {
   const [events, setEvents] = useState<any[]>([]);
   const navigate = useNavigate();
   const [selectedReservation, setSelectedReservation] = useState<ReservationInfoDto | null>(null);
@@ -59,6 +59,7 @@ export default function Reservations() {
           color: "#FFFFFF",
           display: "inline-block",
           width: "100%",
+          cursor: "pointer"
         }}
       >
         {eventInfo.event.title}
@@ -73,8 +74,7 @@ export default function Reservations() {
   };
 
   const handleEdit = (reservation: ReservationInfoDto) => {
-    console.log("Edit reservation:", reservation);
-    // Navigate to edit page or open edit dialog
+    navigate(`/edit-reservation/${reservation.appointmentId}`);
     setOpenDialog(false);
   };
 
