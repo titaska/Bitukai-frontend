@@ -33,7 +33,7 @@ export type ProductDto = {
 
 export type ProductCreateDto = {
   registrationNumber: string;
-  productType: ProductType;
+  productType: string;
   name: string;
   description: string;
   basePrice: number;

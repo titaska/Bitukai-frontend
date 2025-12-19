@@ -54,6 +54,7 @@ export default function App() {
                   <Login
                     onLogin={async (staffDto) => {
                       const businessDto = await getBusinessByRegNumber(staffDto.registrationNumber);
+                      setRegistrationNumber(staffDto.registrationNumber);
                       setBusinessType(businessDto.type);
                       setUserRole(staffDto.role);
                       setIsAuthenticated(true);
@@ -76,12 +77,30 @@ export default function App() {
               path={isCatering ? "/edit-order/:orderId" : "/edit-reservation/:appointmentId"}
               element={
                 <RequireAuth isAuthenticated={isAuthenticated}>
-                  {isCatering ? <NewOrder /> : <NewReservation />}
+                  {isCatering ? <EditOrder /> : <EditReservation />}
                 </RequireAuth>
               }
             />
 
-            <Route
+              <Route
+                  path="/pay-order/:orderId"
+                  element={
+                      <RequireAuth isAuthenticated={isAuthenticated}>
+                          <PayOrder/>
+                      </RequireAuth>
+                  }
+              />
+
+              <Route
+                  path={isCatering ? "/new-order" : "/new-reservation"}
+                  element={
+                      <RequireAuth isAuthenticated={isAuthenticated}>
+                          {isCatering ? <NewOrder /> : <NewReservation />}
+                      </RequireAuth>
+                  }
+              />
+
+              <Route
               path="/staff"
               element={
                 <RequireAuth isAuthenticated={isAuthenticated}>
