@@ -1,10 +1,11 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import Navbar from "./components/Navbar";
+import Navbar from "./components/navbar/Navbar";
 import Orders from "./pages/order/Orders";
 import NewOrder from "./pages/newOrder/NewOrder";
 import EditOrder from "./pages/EditOrder";
-import Reservations from "./pages/Reservations";
+import Reservations from "./pages/calendar/Calendar";
 import NewReservation from "./pages/NewReservation/NewReservation";
+import EditReservation from "./pages/editReservation/EditReservation";
 import Staff from "./pages/Staff";
 import Settings from "./pages/Settings";
 import PayOrder from "./pages/payOrder/PayOrder";
@@ -66,10 +67,10 @@ export default function App() {
             />
 
             <Route
-              path="/edit-order/:orderId"
+              path={isCatering ? "/edit-order/:orderId" : "/edit-reservation/:appointmentId"}
               element={
                 <RequireAuth isAuthenticated={isAuthenticated}>
-                  <EditOrder/>
+                  {isCatering ? <EditOrder/> : <EditReservation/>}
                 </RequireAuth>
               }
             />
