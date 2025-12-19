@@ -117,6 +117,17 @@ export default function Orders() {
                                             <span className={styles['product-price']}>{order.taxAmount?.toFixed(2)}$</span>
                                         </div>
                                     </div>
+
+                                    <div className={styles['order-summary-item']}>
+                                        <div className={styles['order-item-header']}>
+                                            <span className={styles['product-name']}>Service Charge</span>
+                                            <span className={styles['product-qty']}></span>
+                                            <span className={styles['product-price']}>
+                                                {order.serviceChargeAmount?.toFixed(2)}$
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
                                     <div className={styles['order-summary-item']}>
                                         <div className={styles['order-item-header']}>
                                             <span className={styles['product-name']}>Total</span>
