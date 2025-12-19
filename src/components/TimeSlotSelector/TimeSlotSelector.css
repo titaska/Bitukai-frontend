@@ -1,0 +1,49 @@
+.staff-section {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  width: 100%;
+}
+
+.staff-column {
+  flex: 1;
+  padding: 0 20px;
+}
+
+.staff-column h2 {
+  margin-bottom: 15px;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.slot-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.slot {
+  width: 100%;
+  padding: 12px 0;
+  border-radius: 20px;
+  background: #f3f0fa;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  transition: 0.2s;
+}
+
+.slot:hover {
+  background: #e6e2f5;
+}
+
+.slot.selected {
+  background: #5a4fcf;
+  color: white;
+}
+
+.slot.taken {
+  background: #ddd;
+  cursor: not-allowed;
+  color: #666;
+}

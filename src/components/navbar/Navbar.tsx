@@ -5,16 +5,16 @@ import {
   Settings,
   Users,
   ClipboardPlus,
-  ShoppingCart
+  ClipboardList,
 } from "lucide-react";
-import { NavbarProps } from "../types/navbar";
+import { NavbarProps } from "../../types/navbar";
 
 export default function Navbar({ businessType, userRole }: NavbarProps) {
   const cateringLinks = [
-    { to: "/", icon: <ShoppingCart size={20} />, roles: ["STAFF", "OWNER", "SUPERADMIN"] },
-    { to: "/new-order", icon: <ClipboardPlus size={20} />, roles: ["STAFF", "OWNER", "SUPERADMIN"] },
-    { to: "/staff", icon: <Users size={20} />, roles: ["OWNER", "SUPERADMIN"] },
-    { to: "/settings", icon: <Settings size={20} />, roles: ["SUPERADMIN"] },
+      { to: "/", icon: <ClipboardList size={20} />, roles: ["STAFF", "OWNER", "SUPERADMIN"] },
+      { to: "/new-order", icon: <ClipboardPlus size={20} />, roles: ["STAFF", "OWNER", "SUPERADMIN"] },
+      { to: "/staff", icon: <Users size={20} />, roles: ["OWNER", "SUPERADMIN"] },
+      { to: "/settings", icon: <Settings size={20} />, roles: ["SUPERADMIN"] },
   ];
 
   const beautyLinks = [

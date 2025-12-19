@@ -9,7 +9,7 @@ interface LoginCredentials {
 export async function login({ email, password }: LoginCredentials): Promise<StaffDto> {
   const payload = {
     Email: email,
-    PasswordHash: password
+    Password: password
   }
   const response = await fetch(`${API_BASE}/staff/login`, {
     method: "POST",

@@ -1,17 +1,18 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import Navbar from "./components/Navbar";
-import Orders from "./pages/Orders";
-import NewOrder from "./pages/NewOrder";
-import Reservations from "./pages/Reservations";
-import NewReservation from "./pages/NewReservation";
+import Navbar from "./components/navbar/Navbar";
+import Orders from "./pages/order/Orders";
+import NewOrder from "./pages/newOrder/NewOrder";
+import EditOrder from "./pages/EditOrder";
+import Reservations from "./pages/calendar/Calendar";
+import NewReservation from "./pages/NewReservation/NewReservation";
+import EditReservation from "./pages/editReservation/EditReservation";
 import Staff from "./pages/Staff";
 import Settings from "./pages/Settings";
-import { Login } from "./pages/Login";
+import {Login} from "./pages/Login";
 import { JSX, useState } from "react";
 import { BusinessType } from "./types/business";
 import { getBusinessByRegNumber } from "./hooks/getBusinessByRegNumber";
 import { StaffRole } from "./types/staff";
-import StaffDetailsPage from "./pages/StaffDetailsPage";
 
 function RequireAuth({
   isAuthenticated,
@@ -27,15 +28,17 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [businessType, setBusinessType] = useState<BusinessType>("BEAUTY");
   const [userRole, setUserRole] = useState<StaffRole>("STAFF");
-  const [registrationNumber, setRegistrationNumber] = useState<string | null>(null);
 
   const isCatering = businessType === "CATERING";
 
   return (
+      <BusinessContext.Provider
+          value={{ registrationNumber, setRegistrationNumber }}
+      >
     <Router>
       <div style={{ display: "flex" }}>
         {isAuthenticated && <Navbar businessType={businessType} userRole={userRole} />}
-
+       
         <main style={{ marginLeft: "80px", padding: "20px", width: "100%" }}>
           <Routes>
             <Route
@@ -47,8 +50,6 @@ export default function App() {
                   <Login
                     onLogin={async (staffDto) => {
                       const businessDto = await getBusinessByRegNumber(staffDto.registrationNumber);
-
-                      setRegistrationNumber(staffDto.registrationNumber);
                       setBusinessType(businessDto.type);
                       setUserRole(staffDto.role);
                       setIsAuthenticated(true);
@@ -68,7 +69,7 @@ export default function App() {
             />
 
             <Route
-              path={isCatering ? "/new-order" : "/new-reservation"}
+              path={isCatering ? "/edit-order/:orderId" : "/edit-reservation/:appointmentId"}
               element={
                 <RequireAuth isAuthenticated={isAuthenticated}>
                   {isCatering ? <NewOrder /> : <NewReservation />}
@@ -76,7 +77,6 @@ export default function App() {
               }
             />
 
-            {/* STAFF LIST */}
             <Route
               path="/staff"
               element={
@@ -135,5 +135,6 @@ export default function App() {
         </main>
       </div>
     </Router>
+      </BusinessContext.Provider>
   );
 }
