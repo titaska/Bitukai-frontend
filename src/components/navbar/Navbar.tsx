@@ -7,7 +7,7 @@ import {
   ClipboardPlus,
   ClipboardList,
 } from "lucide-react";
-import { NavbarProps } from "../types/navbar";
+import { NavbarProps } from "../../types/navbar";
 
 export default function Navbar({ businessType, userRole }: NavbarProps) {
   const cateringLinks = [
