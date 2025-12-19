@@ -140,12 +140,16 @@ export default function Settings({ registrationNumber }: Props) {
       });
 
       const data = Array.isArray(res?.data) ? res.data : [];
+      
+      const filtered = data.filter(
+          (p: any) => p.registrationNumber === registrationNumber
+      );
 
       setRows(
-        data.map((p: any) => ({
-          ...p,
-          productType: String(p.productType ?? ""),
-        }))
+          filtered.map((p: any) => ({
+            ...p,
+            productType: String(p.productType ?? ""),
+          }))
       );
     } catch (e) {
       console.error("Failed to load products:", e);
