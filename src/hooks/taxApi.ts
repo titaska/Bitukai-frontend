@@ -1,8 +1,9 @@
 // src/services/taxApi.ts
+import { API_BASE } from "../constants/api";
 import { TaxCreateUpdate, TaxDto } from "../types/tax";
 
-const API_BASE = "http://localhost:5089/api";
 const TAX_URL = `${API_BASE}/tax`;
+
 
 async function readTextSafe(res: Response) {
   const text = await res.text().catch(() => "");

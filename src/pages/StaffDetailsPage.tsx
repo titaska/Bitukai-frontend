@@ -14,37 +14,12 @@ import {
   MenuItem,
 } from "@mui/material";
 import { API_BASE, PRODUCTS_BASE } from "../constants/api";
-
-type BusinessType = "CATERING" | "BEAUTY";
+import {StaffUpdateDto, StaffDtoDetails, BusinessType} from "../types/staff";
+import {ProductDtoDetails } from "../types/product";
 
 type Props = {
   registrationNumber: string;
   businessType: BusinessType; 
-};
-
-type StaffDto = {
-  staffId: string;
-  registrationNumber: string;
-  status: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phoneNumber: string;
-  role: string;
-  hireDate: string;
-  password: string | null;
-};
-
-type ProductDto = {
-  productId: string;
-  registrationNumber: string;
-  type: "ITEM" | "SERVICE"; 
-  name: string;
-  description: string;
-  basePrice: number;
-  durationMinutes?: number | null;
-  taxCode: string;
-  status: boolean;
 };
 
 type AssignedRow = {
@@ -58,19 +33,12 @@ async function readBodySafe(res: Response) {
   return text || `HTTP ${res.status}`;
 }
 
-type StaffUpdateDto = {
-  status: "ACTIVE" | "INACTIVE";
-  firstName: string;
-  lastName: string;
-  email: string;
-  phoneNumber: string;
-  passwordHash?: string;
-};
+
 
 export default function StaffDetailsPage({ registrationNumber, businessType }: Props) {
   const { staffId } = useParams<{ staffId: string }>();
 
-  const [staff, setStaff] = useState<StaffDto | null>(null);
+  const [staff, setStaff] = useState<StaffDtoDetails | null>(null);
   const [assigned, setAssigned] = useState<AssignedRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -85,7 +53,7 @@ export default function StaffDetailsPage({ registrationNumber, businessType }: P
   const [newPassword, setNewPassword] = useState("");
 
   const [assignOpen, setAssignOpen] = useState(false);
-  const [options, setOptions] = useState<ProductDto[]>([]);
+  const [options, setOptions] = useState<ProductDtoDetails[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("");
 
   const [errorText, setErrorText] = useState<string | null>(null);
@@ -98,7 +66,7 @@ export default function StaffDetailsPage({ registrationNumber, businessType }: P
     return (registrationNumber || staff?.registrationNumber || "").trim();
   }, [registrationNumber, staff?.registrationNumber]);
 
-  const hydrateFormFromStaff = useCallback((s: StaffDto) => {
+  const hydrateFormFromStaff = useCallback((s: StaffDtoDetails) => {
     setStatus(String(s.status).toUpperCase() === "INACTIVE" ? "INACTIVE" : "ACTIVE");
     setFirstName(s.firstName ?? "");
     setLastName(s.lastName ?? "");
@@ -118,12 +86,12 @@ export default function StaffDetailsPage({ registrationNumber, businessType }: P
     }
     if (!sRes.ok) throw new Error(await readBodySafe(sRes));
 
-    const staffJson = (await sRes.json()) as StaffDto;
+    const staffJson = (await sRes.json()) as StaffDtoDetails;
     setStaff(staffJson);
     hydrateFormFromStaff(staffJson);
   }, [staffId, hydrateFormFromStaff]);
 
-  const loadProducts = useCallback(async (): Promise<ProductDto[]> => {
+  const loadProducts = useCallback(async (): Promise<ProductDtoDetails[]> => {
     if (!effectiveRegNumber) return [];
 
     const res = await fetch(
@@ -134,7 +102,7 @@ export default function StaffDetailsPage({ registrationNumber, businessType }: P
 
     if (!res.ok) throw new Error(await readBodySafe(res));
     const json = await res.json();
-    const data: ProductDto[] = Array.isArray(json) ? json : (json?.data ?? []);
+    const data: ProductDtoDetails[] = Array.isArray(json) ? json : (json?.data ?? []);
     return Array.isArray(data) ? data : [];
   }, [effectiveRegNumber, allowedType]);
 
@@ -225,8 +193,16 @@ export default function StaffDetailsPage({ registrationNumber, businessType }: P
         lastName: lastName.trim(),
         email: email.trim(),
         phoneNumber: phoneNumber.trim(),
-        ...(newPassword.trim() ? { passwordHash: newPassword.trim() } : {}),
+        role: staff?.role ?? "STAFF",
+        hireDate: staff?.hireDate || new Date().toISOString(),
+        password: newPassword.trim(),
       };
+      
+      if (!dto.password) {
+        setErrorText("Password is required.");
+        setSaving(false);
+        return;
+      }
 
       const res = await fetch(`${API_BASE}/staff/${encodeURIComponent(staffId)}`, {
         method: "PUT",
@@ -236,7 +212,7 @@ export default function StaffDetailsPage({ registrationNumber, businessType }: P
 
       if (!res.ok) throw new Error(await readBodySafe(res));
 
-      const updated = (await res.json()) as StaffDto;
+      const updated = (await res.json()) as StaffDtoDetails;
       setStaff(updated);
       hydrateFormFromStaff(updated);
       setEditing(false);

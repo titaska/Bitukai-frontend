@@ -1,14 +1,5 @@
 import { PRODUCTS_BASE } from "../constants/api";
 
-export type ProductStaffDto = {
-  productStaffId: string;
-  productId: string;
-  staffId: string;
-  status: boolean;
-  validFrom?: string | null;
-  validTo?: string | null;
-};
-
 export async function getProductStaff(productId: string) {
   const res = await fetch(`${PRODUCTS_BASE}/products/${productId}/staff`);
   if (!res.ok) throw new Error(await res.text());

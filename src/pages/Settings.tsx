@@ -19,12 +19,12 @@ import {
   createProduct,
   deleteProduct,
   listProducts,
-  ProductDto,
   updateProduct,
-} from "../hooks/products";
+} from "../hooks/productsApi";
+import { ProductDto} from "../types/product";
 
 import TaxFormModal from "../components/TaxFormModal";
-import { taxApi } from "../services/taxApi";
+import { taxApi } from "../hooks/taxApi";
 import { TaxCreateUpdate, TaxDto } from "../types/tax";
 
 type Props = { registrationNumber: string };

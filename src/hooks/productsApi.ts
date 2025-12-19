@@ -1,48 +1,11 @@
 import { PRODUCTS_BASE } from "../constants/api";
-
-export type ProductType = "ITEM" | "SERVICE";
-
-export type ProductDto = {
-  productId: string;
-  registrationNumber: string;
-
-  productType: ProductType;
-
-  name: string;
-  description: string;
-  basePrice: number;
-  durationMinutes?: number | null;
-  taxCode: string;
-  status: boolean;
-};
-
-export type ProductCreateDto = {
-  registrationNumber: string;
-  productType: ProductType;
-  name: string;
-  description: string;
-  basePrice: number;
-  durationMinutes?: number | null;
-  taxCode: string;
-  status: boolean;
-};
-
-export type ProductUpdateDto = {
-  name: string;
-  description: string;
-  basePrice: number;
-  durationMinutes?: number | null;
-  taxCode: string;
-  status: boolean;
-};
-
-type ListParams = {
-  registrationNumber: string; 
-  type?: ProductType;
-  search?: string;
-  page?: number;
-  limit?: number;
-};
+import {
+  ProductDto,
+  ProductType,
+  ProductCreateDto,
+  ProductUpdateDto,
+  ListParams,
+} from "../types/product";
 
 function normalizeProductsResponse(json: any): ProductDto[] {
   const arr = Array.isArray(json) ? json : (json?.data ?? []);

@@ -18,7 +18,7 @@ import {
   ProductDto,
   ProductType,
   ProductUpdateDto,
-} from "../hooks/products";
+} from "../types/product";
 import { TaxDto } from "../types/tax";
 
 type Props = {

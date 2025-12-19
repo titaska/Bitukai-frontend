@@ -1,12 +1,14 @@
 export enum StaffStatus {
     ACTIVE = 1,
     INACTIVE = 2,
-  }
+}
   
   export type StaffRole = "STAFF" | "OWNER" | "SUPERADMIN";
+
+  export type BusinessType = "CATERING" | "BEAUTY";
   
   export interface StaffDto {
-    staffId: number;
+    staffId: string;
     registrationNumber: string;
     status: StaffStatus;
     firstName: string;
@@ -22,10 +24,10 @@ export enum StaffStatus {
     firstName: string;
     lastName: string;
     email: string;
-    phoneNumber: string;
-    passwordHash: string;
+    phoneNumber: string;    
     role: StaffRole;
     hireDate: string;
+    password: string;
   }
 
   export interface StaffUpdate {
@@ -33,10 +35,39 @@ export enum StaffStatus {
     firstName: string;
     lastName: string;
     email: string;
-    phoneNumber: string;
-    passwordHash?: string | null;
+    phoneNumber: string;   
     role: StaffRole;
     hireDate: string;
+    password: string;
   }
+
+  export type StaffUpdateDto = {
+    status: "ACTIVE" | "INACTIVE";
+    firstName: string;
+    lastName: string;
+    email: string;
+    phoneNumber: string;
+    role: string;        
+    hireDate: string;    
+    password: string;    
+  };
+
+  export type StaffDtoDetails = {
+    staffId: string;
+    registrationNumber: string;
+    status: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phoneNumber: string;
+    role: string;
+    hireDate: string;
+    password: string | null;
+  };
+
+
+
+
+
   
   

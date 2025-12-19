@@ -1,10 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  Dialog, DialogTitle, DialogContent, DialogActions,
-  Button, Stack, TextField, MenuItem
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Stack,
+  TextField,
+  MenuItem,
+  Typography,
 } from "@mui/material";
-import { StaffDto, StaffStatus } from "../types/staff";
-import { StaffUpdateDto, updateStaff } from "../hooks/staffApi";
+import { StaffDto, StaffStatus, StaffUpdate } from "../types/staff";
+import { staffApi } from "../hooks/staffApi";
 
 type Props = {
   open: boolean;
@@ -15,13 +22,21 @@ type Props = {
 
 type StatusOption = "ACTIVE" | "INACTIVE";
 
+function statusToOption(s: StaffStatus): StatusOption {
+  return s === StaffStatus.INACTIVE ? "INACTIVE" : "ACTIVE";
+}
+
+function optionToStatus(opt: StatusOption): StaffStatus {
+  return opt === "INACTIVE" ? StaffStatus.INACTIVE : StaffStatus.ACTIVE;
+}
+
 export default function StaffEditModal({ open, onClose, staff, onSaved }: Props) {
   const [status, setStatus] = useState<StatusOption>("ACTIVE");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [password, setPassword] = useState(""); 
+  const [password, setPassword] = useState("");
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,12 +44,12 @@ export default function StaffEditModal({ open, onClose, staff, onSaved }: Props)
   useEffect(() => {
     if (!open) return;
 
-    setStatus(String(staff.status).toUpperCase() === "INACTIVE" ? "INACTIVE" : "ACTIVE");
+    setStatus(statusToOption(staff.status));
     setFirstName(staff.firstName ?? "");
     setLastName(staff.lastName ?? "");
     setEmail(staff.email ?? "");
     setPhoneNumber(staff.phoneNumber ?? "");
-    setPassword(""); 
+    setPassword(""); // backend reikalauja password per update
     setError(null);
   }, [open, staff]);
 
@@ -44,9 +59,10 @@ export default function StaffEditModal({ open, onClose, staff, onSaved }: Props)
       !firstName.trim() ||
       !lastName.trim() ||
       !email.trim() ||
-      !password.trim() 
+      !phoneNumber.trim() ||
+      !password.trim()
     );
-  }, [saving, firstName, lastName, email, password]);
+  }, [saving, firstName, lastName, email, phoneNumber, password]);
 
   const save = async () => {
     if (disabled) return;
@@ -55,17 +71,18 @@ export default function StaffEditModal({ open, onClose, staff, onSaved }: Props)
     setError(null);
 
     try {
-      const dto: StaffUpdateDto = {
-        Status: status as unknown as StaffStatus,
-        FirstName: firstName.trim(),
-        LastName: lastName.trim(),
-        Email: email.trim(),
-        PhoneNumber: phoneNumber.trim(),
-        Role: String(staff.role ?? ""),     
-        Password: password.trim(),          
+      const dto: StaffUpdate = {
+        status: optionToStatus(status),
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email.trim(),
+        phoneNumber: phoneNumber.trim(),
+        role: staff.role,
+        hireDate: staff.hireDate || new Date().toISOString(),
+        password: password.trim(),
       };
 
-      const updated = await updateStaff(String(staff.staffId), dto);
+      const updated = await staffApi.update(staff.staffId, dto);
       onSaved(updated);
       onClose();
     } catch (e: any) {
@@ -81,7 +98,11 @@ export default function StaffEditModal({ open, onClose, staff, onSaved }: Props)
 
       <DialogContent>
         <Stack gap={2} sx={{ mt: 1 }}>
-          {error && <div style={{ color: "red" }}>{error}</div>}
+          {error && (
+            <Typography color="error" sx={{ whiteSpace: "pre-wrap" }}>
+              {error}
+            </Typography>
+          )}
 
           <TextField
             select
@@ -99,21 +120,21 @@ export default function StaffEditModal({ open, onClose, staff, onSaved }: Props)
           <TextField label="Email" value={email} onChange={(e) => setEmail(e.target.value)} fullWidth />
           <TextField label="Phone number" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} fullWidth />
 
-          {/* Role nerodom / nekeičiam, bet backend’ui siunčiam staff.role */}
-
           <TextField
             type="password"
             label="Password (required)"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            helperText="Backend requires Password for update"
+            helperText="Backend requires password for update"
             fullWidth
           />
         </Stack>
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={onClose} disabled={saving}>Cancel</Button>
+        <Button onClick={onClose} disabled={saving}>
+          Cancel
+        </Button>
         <Button variant="contained" onClick={save} disabled={disabled}>
           {saving ? "Saving..." : "Save"}
         </Button>

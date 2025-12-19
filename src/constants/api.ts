@@ -1,7 +1,5 @@
-export const API_ORIGIN = "http://localhost:5089";
+export const API_BASE = "http://localhost:5089/api";
 
-export const STAFF_BASE = `${API_ORIGIN}/api`;
-
-export const PRODUCTS_BASE = API_ORIGIN;
-
-export const API_BASE = STAFF_BASE;
+export const PRODUCTS_BASE = API_BASE;
+export const STAFF_BASE = API_BASE;
+export const TAX_BASE = API_BASE;

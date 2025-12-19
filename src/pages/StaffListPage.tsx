@@ -1,35 +1,24 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Box, Button, Paper, Table, TableBody, TableCell, TableHead, TableRow, Typography
+  Box,
+  Button,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Typography,
 } from "@mui/material";
 import { STAFF_BASE, PRODUCTS_BASE } from "../constants/api";
 import AddStaffModal from "../components/AddStaffModal";
-
-type BusinessType = "CATERING" | "BEAUTY";
+import { BusinessType, StaffDto } from "../types/staff";
+import { ProductDto } from "../types/product";
 
 type Props = {
   registrationNumber: string;
-  businessType: BusinessType; 
-};
-
-type StaffDto = {
-  staffId: string;              
-  registrationNumber: string;
-  status: any;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phoneNumber: string;
-  role: any;
-  hireDate: string;
-};
-
-type ProductDto = {
-  productId: string;
-  registrationNumber: string;
-  type: "ITEM" | "SERVICE"; 
-  name: string;
+  businessType: BusinessType;
 };
 
 async function readBodySafe(res: Response) {
@@ -49,7 +38,10 @@ export default function StaffListPage({ registrationNumber, businessType }: Prop
   const colTitle = allowedType === "ITEM" ? "Items" : "Services";
 
   const loadStaff = useCallback(async () => {
-    if (!registrationNumber) { setRows([]); return; }
+    if (!registrationNumber) {
+      setRows([]);
+      return;
+    }
 
     const res = await fetch(
       `${STAFF_BASE}/staff?registrationNumber=${encodeURIComponent(registrationNumber)}`
@@ -61,10 +53,15 @@ export default function StaffListPage({ registrationNumber, businessType }: Prop
   }, [registrationNumber]);
 
   const loadStaffProductsMap = useCallback(async () => {
-    if (!registrationNumber) { setStaffProducts({}); return; }
+    if (!registrationNumber) {
+      setStaffProducts({});
+      return;
+    }
 
     const pRes = await fetch(
-      `${PRODUCTS_BASE}/products?type=${allowedType}&registrationNumber=${encodeURIComponent(registrationNumber)}&page=1&limit=200`
+      `${PRODUCTS_BASE}/products?type=${allowedType}&registrationNumber=${encodeURIComponent(
+        registrationNumber
+      )}&page=1&limit=200`
     );
     if (!pRes.ok) throw new Error(await readBodySafe(pRes));
 
@@ -98,7 +95,11 @@ export default function StaffListPage({ registrationNumber, businessType }: Prop
   }, [registrationNumber, allowedType]);
 
   const loadAll = useCallback(async () => {
-    if (!registrationNumber) { setRows([]); setStaffProducts({}); return; }
+    if (!registrationNumber) {
+      setRows([]);
+      setStaffProducts({});
+      return;
+    }
 
     setLoading(true);
     try {
@@ -119,19 +120,45 @@ export default function StaffListPage({ registrationNumber, businessType }: Prop
     }
   }, [registrationNumber, loadStaff, loadStaffProductsMap]);
 
-  useEffect(() => { loadAll(); }, [loadAll]);
+  useEffect(() => {
+    loadAll();
+  }, [loadAll]);
 
-  const servicesText = useCallback((staffId: string) => {
-    const list = staffProducts[staffId] ?? [];
-    return list.length ? list.join(", ") : "—";
-  }, [staffProducts]);
+  const servicesText = useCallback(
+    (staffId: string) => {
+      const list = staffProducts[staffId] ?? [];
+      return list.length ? list.join(", ") : "—";
+    },
+    [staffProducts]
+  );
 
   const canAdd = useMemo(() => !!registrationNumber, [registrationNumber]);
+
+  const handleDelete = useCallback(
+    async (staffId: string) => {
+      if (!window.confirm("Delete this staff member?")) return;
+
+      const res = await fetch(`${STAFF_BASE}/staff/${encodeURIComponent(staffId)}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const msg = await readBodySafe(res);
+        alert(msg);
+        return;
+      }
+
+      await loadAll();
+    },
+    [loadAll]
+  );
 
   return (
     <Box sx={{ ml: "80px", p: 3 }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-        <Typography variant="h5" fontWeight={700}>Staff members</Typography>
+        <Typography variant="h5" fontWeight={700}>
+          Staff members
+        </Typography>
         <Button variant="contained" onClick={() => setOpen(true)} disabled={!canAdd}>
           Add New
         </Button>
@@ -141,22 +168,34 @@ export default function StaffListPage({ registrationNumber, businessType }: Prop
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell><b>Name</b></TableCell>
-              <TableCell><b>{colTitle}</b></TableCell>
-              <TableCell><b>Employed on</b></TableCell>
-              <TableCell align="right"><b>Actions</b></TableCell>
+              <TableCell>
+                <b>Name</b>
+              </TableCell>
+              <TableCell>
+                <b>{colTitle}</b>
+              </TableCell>
+              <TableCell>
+                <b>Employed on</b>
+              </TableCell>
+              <TableCell align="right">
+                <b>Actions</b>
+              </TableCell>
             </TableRow>
           </TableHead>
 
           <TableBody>
             {rows.map((s) => (
-              <TableRow key={s.staffId} hover>
-                <TableCell>{s.firstName} {s.lastName}</TableCell>
-                <TableCell sx={{ color: "#666" }}>{servicesText(s.staffId)}</TableCell>
+              <TableRow key={String(s.staffId)} hover>
+                <TableCell>
+                  {s.firstName} {s.lastName}
+                </TableCell>
+                <TableCell sx={{ color: "#666" }}>{servicesText(String(s.staffId))}</TableCell>
                 <TableCell>{new Date(s.hireDate).toLocaleDateString()}</TableCell>
                 <TableCell align="right">
-                  <Button onClick={() => navigate(`/staff/${s.staffId}`)}>
-                    Edit details
+                  <Button onClick={() => navigate(`/staff/${s.staffId}`)}>Edit Details</Button>
+
+                  <Button color="error" onClick={() => handleDelete(String(s.staffId))}>
+                    Delete
                   </Button>
                 </TableCell>
               </TableRow>
@@ -177,7 +216,7 @@ export default function StaffListPage({ registrationNumber, businessType }: Prop
         open={open}
         onClose={() => setOpen(false)}
         registrationNumber={registrationNumber}
-        onCreated={() => loadAll()} 
+        onCreated={() => loadAll()}
       />
     </Box>
   );
