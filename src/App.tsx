@@ -4,7 +4,7 @@ import Orders from "./pages/order/Orders";
 import NewOrder from "./pages/newOrder/NewOrder";
 import EditOrder from "./pages/EditOrder";
 import Reservations from "./pages/calendar/Calendar";
-import NewReservation from "./pages/newReservation/NewReservation";
+import NewReservation from "./pages/NewReservation/NewReservation";
 import EditReservation from "./pages/editReservation/EditReservation";
 import Staff from "./pages/Staff";
 import Settings from "./pages/Settings";

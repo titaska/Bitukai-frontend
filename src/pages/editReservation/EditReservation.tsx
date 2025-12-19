@@ -1,17 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import "./EditReservation.css";
 import { API_BASE } from "../../constants/api";
 import { updateReservation } from "../../hooks/updateReservation";
 import { getTakenSlots } from "../../hooks/useTakenSlots";
-
+import { getSpecificReservation } from "../../hooks/getSpecificReservation";
 import { ReservationBusiness } from "../../types/business";
 import { ReservationStaff } from "../../types/staff";
 import { ReservationProduct } from "../../types/Product";
 import { Reservation } from "../../types/reservation";
 import { useBusiness } from "../../types/BusinessContext";
 import { filterByRegistrationNumber } from "../../utils/filterByRegistrationNumber";
-
 
 /* ================= COMPONENT ================= */
 export default function EditReservation() {
@@ -36,38 +35,29 @@ export default function EditReservation() {
   const [clientPhone, setClientPhone] = useState("");
   const [notes, setNotes] = useState("");
 
+  const navigate = useNavigate();
   const { registrationNumber } = useBusiness();
-  const visibleBusinesses = filterByRegistrationNumber(
-  businesses,
-  registrationNumber
-  );
-  const visibleProducts = filterByRegistrationNumber(
-  products,
-  registrationNumber
-  );
-  const visibleStaff = filterByRegistrationNumber(
-  staff,
-  registrationNumber
-  );
+  const visibleBusinesses = filterByRegistrationNumber(businesses, registrationNumber);
+  const visibleProducts = filterByRegistrationNumber(products, registrationNumber);
+  const visibleStaff = filterByRegistrationNumber(staff, registrationNumber);
 
-  const today = new Date().toISOString().split("T")[0]; 
-
+  const today = new Date().toISOString().split("T")[0];
   const { appointmentId } = useParams<{ appointmentId: string }>();
 
   /* ================= FETCH BUSINESS ================= */
   useEffect(() => {
     fetch(`${API_BASE}/business`)
-      .then(r => r.json())
-      .then(setBusinesses)
-      .catch(console.error);
+        .then(r => r.json())
+        .then(setBusinesses)
+        .catch(console.error);
   }, []);
 
   /* ================= FETCH PRODUCTS ================= */
   useEffect(() => {
     fetch(`${API_BASE}/products`)
-      .then(r => r.json())
-      .then(res => setProducts(res.data ?? []))
-      .catch(console.error);
+        .then(r => r.json())
+        .then(res => setProducts(res.data ?? []))
+        .catch(console.error);
   }, []);
 
   /* ================= FETCH STAFF FOR SERVICE ================= */
@@ -75,10 +65,44 @@ export default function EditReservation() {
     if (!selectedProduct) return;
 
     fetch(`${API_BASE}/products/${selectedProduct.productId}/staff`)
-      .then(r => r.json())
-      .then(setStaff)
-      .catch(console.error);
+        .then(r => r.json())
+        .then(setStaff)
+        .catch(console.error);
   }, [selectedProduct]);
+
+  /* ================= FETCH RESERVATION ================= */
+  useEffect(() => {
+    if (!appointmentId) return;
+
+    const loadReservation = async () => {
+      const reservation = await getSpecificReservation(appointmentId);
+      if (!reservation) return;
+
+      // Populate state with reservation data
+      setSelectedBusiness(reservation.registrationNumber);
+      setSelectedProduct(products.find(p => p.productId === reservation.serviceProductId) || null);
+      setSelectedStaff(reservation.employeeId);
+
+      // Convert startTime to date and time slot
+      const dateObj = new Date(reservation.startTime);
+      const startHours = dateObj.getHours().toString().padStart(2, "0");
+      const startMinutes = dateObj.getMinutes().toString().padStart(2, "0");
+
+      const endDate = new Date(dateObj.getTime() + reservation.durationMinutes * 60000);
+      const endHours = endDate.getHours().toString().padStart(2, "0");
+      const endMinutes = endDate.getMinutes().toString().padStart(2, "0");
+
+      setSelectedDate(dateObj.toISOString().split("T")[0]);
+      setSelectedTime(`${startHours}:${startMinutes} - ${endHours}:${endMinutes}`);
+
+      setClientName(reservation.clientName);
+      setClientSurname(reservation.clientSurname);
+      setClientPhone(reservation.clientPhone);
+      setNotes(reservation.notes || "");
+    };
+
+    loadReservation();
+  }, [appointmentId, products]);
 
   /* ================= FETCH AVAILABILITY ================= */
   useEffect(() => {
@@ -92,12 +116,11 @@ export default function EditReservation() {
         all.push(...reservations);
       }
 
-        setTakenSlots(all);
+      setTakenSlots(all);
     };
 
     load();
   }, [selectedDate, staff]);
-
 
   /* ================= SLOT GENERATION ================= */
   function generateSlots(): string[] {
@@ -115,11 +138,11 @@ export default function EditReservation() {
       const m2 = (current + step) % 60;
 
       slots.push(
-        `${h1.toString().padStart(2, "0")}:${m1
-          .toString()
-          .padStart(2, "0")} - ${h2
-          .toString()
-          .padStart(2, "0")}:${m2.toString().padStart(2, "0")}`
+          `${h1.toString().padStart(2, "0")}:${m1
+              .toString()
+              .padStart(2, "0")} - ${h2
+              .toString()
+              .padStart(2, "0")}:${m2.toString().padStart(2, "0")}`
       );
 
       current += step;
@@ -133,7 +156,6 @@ export default function EditReservation() {
     return h * 60 + m;
   }
 
-
   function isTaken(staffId: string, slot: string) {
     const [from, to] = slot.split(" - ");
 
@@ -144,16 +166,13 @@ export default function EditReservation() {
       if (r.employeeId !== staffId) return false;
 
       const start = new Date(r.startTime);
-      const localMinutes =
-        start.getHours() * 60 + start.getMinutes();
-
+      const localMinutes = start.getHours() * 60 + start.getMinutes();
       const end = localMinutes + r.durationMinutes;
 
       // overlap check
       return slotStart < end && slotEnd > localMinutes;
     });
   }
-
 
   /* ================= SUBMIT ================= */
   async function handleSubmit() {
@@ -174,104 +193,120 @@ export default function EditReservation() {
       clientSurname,
       clientPhone,
       notes
-    }
+    };
 
     try {
       await updateReservation(appointmentId, updatedReservation);
-
       alert("Appointment updated");
-      setSelectedTime("");
+      navigate("/");
     } catch {
       alert("Failed to update appointment");
     }
   }
 
-
   /* ================= RENDER ================= */
   return (
-    <div className="reservation-container">
-      <h1>Edit appointment</h1>
+      <div className="reservation-container">
+        <h1>Edit appointment</h1>
 
-      <div className="selectors">
-        <select onChange={e => setSelectedBusiness(e.target.value)}>
-          <option value="">Select location</option>
-          {visibleBusinesses.map(b => (
-          <option key={b.registrationNumber} value={b.registrationNumber}>
-          {b.name} ({b.location})
-          </option>
+        <div className="selectors">
+          <select
+              value={selectedBusiness}
+              onChange={e => setSelectedBusiness(e.target.value)}
+          >
+            <option value="">Select location</option>
+            {visibleBusinesses.map(b => (
+                <option key={b.registrationNumber} value={b.registrationNumber}>
+                  {b.name} ({b.location})
+                </option>
+            ))}
+          </select>
+
+          <select
+              value={selectedProduct?.productId || ""}
+              onChange={e =>
+                  setSelectedProduct(
+                      products.find(p => p.productId === e.target.value) || null
+                  )
+              }
+          >
+            <option value="">Select service</option>
+            {visibleProducts.map(p => (
+                <option key={p.productId} value={p.productId}>
+                  {p.name} ({p.durationMinutes} min)
+                </option>
+            ))}
+          </select>
+
+          <input
+              type="date"
+              value={selectedDate}
+              min={today}
+              onChange={e => setSelectedDate(e.target.value)}
+          />
+        </div>
+
+        <div className="staff-columns">
+          {visibleStaff.map(s => (
+              <div key={s.staffId} className="staff-column">
+                <h3>{s.firstName} {s.lastName}</h3>
+
+                {generateSlots().map(slot => {
+                  const taken = isTaken(s.staffId, slot);
+                  const selected =
+                      selectedStaff === s.staffId && selectedTime === slot;
+
+                  return (
+                      <button
+                          key={slot}
+                          disabled={taken}
+                          className={
+                            taken
+                                ? "slot taken"
+                                : selected
+                                    ? "slot selected"
+                                    : "slot"
+                          }
+                          onClick={() => {
+                            setSelectedStaff(s.staffId);
+                            setSelectedTime(slot);
+                          }}
+                      >
+                        {slot}
+                      </button>
+                  );
+                })}
+              </div>
           ))}
-        </select>
+        </div>
 
-        <select
-          onChange={e =>
-            setSelectedProduct(
-              products.find(p => p.productId === e.target.value) || null
-            )
-          }
-        >
-          <option value="">Select service</option>
-          {visibleProducts.map(p => (
-          <option key={p.productId} value={p.productId}>
-          {p.name} ({p.durationMinutes} min)
-          </option>
-          ))}
+        <div className="client-info">
+          <input
+              placeholder="Name"
+              value={clientName}
+              onChange={e => setClientName(e.target.value)}
+          />
+          <input
+              placeholder="Surname"
+              value={clientSurname}
+              onChange={e => setClientSurname(e.target.value)}
+          />
+          <input
+              placeholder="Phone"
+              value={clientPhone}
+              onChange={e => setClientPhone(e.target.value)}
+          />
+        </div>
 
-        </select>
+        <textarea
+            placeholder="Notes"
+            value={notes}
+            onChange={e => setNotes(e.target.value)}
+        />
 
-        <input
-            type="date"
-            value={selectedDate}
-            min={today}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            />
-
+        <button className="submit-btn" onClick={handleSubmit}>
+          Update appointment
+        </button>
       </div>
-
-      <div className="staff-columns">
-        {visibleStaff.map(s => (
-          <div key={s.staffId} className="staff-column">
-            <h3>{s.firstName} {s.lastName}</h3>
-
-            {generateSlots().map(slot => {
-              const taken = isTaken(s.staffId, slot);
-              const selected =
-                selectedStaff === s.staffId && selectedTime === slot;
-
-              return (
-                <button
-                  key={slot}
-                  disabled={taken}
-                  className={
-                    taken
-                      ? "slot taken"
-                      : selected
-                      ? "slot selected"
-                      : "slot"
-                  }
-                  onClick={() => {
-                    setSelectedStaff(s.staffId);
-                    setSelectedTime(slot);
-                  }}
-                >
-                  {slot}
-                </button>
-              );
-            })}
-          </div>
-        ))}
-      </div>
-
-      <div className="client-info">
-        <input placeholder="Name" onChange={e => setClientName(e.target.value)} />
-        <input placeholder="Surname" onChange={e => setClientSurname(e.target.value)} />
-        <input placeholder="Phone" onChange={e => setClientPhone(e.target.value)} />
-      </div>
-
-      <textarea placeholder="Notes" onChange={e => setNotes(e.target.value)} />
-
-      <button className="submit-btn" onClick={handleSubmit}>
-        Update appointment
-      </button>
-    </div>
   );
 }
