@@ -6,11 +6,14 @@ import { useBusiness } from "../../types/BusinessContext";
 import { useProducts } from "../../hooks/getProducts";
 import { createOrder } from "../../hooks/createOrder";
 import { ProductItem } from "../../types/ProductItem";
+import { Edit3 } from "lucide-react"; // edit icon
 
 export default function NewOrder() {
     const { registrationNumber } = useBusiness();
     const { products, loading, error } = useProducts(registrationNumber);
     const [orderItems, setOrderItems] = useState<ProductItem[]>([]);
+    const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+    const [tempNote, setTempNote] = useState("");
     const navigate = useNavigate();
 
     const goToOrders = async () => {
@@ -33,7 +36,7 @@ export default function NewOrder() {
                         : item
                 );
             }
-            return [...prev, { ...product, quantity: 1 }];
+            return [...prev, { ...product, quantity: 1, notes: "" }];
         });
     };
 
@@ -53,6 +56,21 @@ export default function NewOrder() {
                 )
                 .filter(item => item.quantity > 0)
         );
+    };
+
+    const startEditingNote = (id: string, currentNote: string) => {
+        setEditingNoteId(id);
+        setTempNote(currentNote);
+    };
+
+    const saveNote = (id: string) => {
+        setOrderItems(prev =>
+            prev.map(item =>
+                item.productId === id ? { ...item, notes: tempNote } : item
+            )
+        );
+        setEditingNoteId(null);
+        setTempNote("");
     };
 
     const totalPrice = orderItems.reduce(
@@ -90,15 +108,58 @@ export default function NewOrder() {
                     {orderItems.length === 0 && <p>No items added</p>}
                     {orderItems.map(item => (
                         <div key={item.productId} className={styles['order-item']}>
-                            <span>{item.name}</span>
+                            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px", textAlign: "left" }}>
+                                <span className={styles['product-name']}>{item.name}</span>
+                                {item.notes && (
+                                    <span style={{ fontSize: "0.85rem", color: "#888" }}>{item.notes}</span>
+                                )}
+                            </div>
+
                             <div className={styles['quantity-controls']}>
                                 <button onClick={() => decreaseQuantity(item.productId)}>-</button>
                                 <span>{item.quantity}</span>
                                 <button onClick={() => increaseQuantity(item.productId)}>+</button>
                             </div>
-                            <span>${(item.basePrice * item.quantity).toFixed(2)}</span>
+
+                            <span style={{ marginLeft: "12px", minWidth: "70px", textAlign: "right" }}>
+                                ${(item.basePrice * item.quantity).toFixed(2)}
+                            </span>
+
+                            {/* Edit icon after price */}
+                            <Edit3
+                                size={18}
+                                style={{ cursor: "pointer", marginLeft: "12px", color: "#5a52d4" }}
+                                onClick={() => startEditingNote(item.productId, item.notes || "")}
+                            />
+
+                            {/* Note input overlay */}
+                            {editingNoteId === item.productId && (
+                                <div style={{ display: "flex", gap: "4px", marginTop: "4px", width: "100%" }}>
+                                    <input
+                                        type="text"
+                                        value={tempNote}
+                                        onChange={e => setTempNote(e.target.value)}
+                                        placeholder="Enter note"
+                                        style={{ flex: 1, padding: "4px 8px", borderRadius: "6px", border: "1px solid #ddd" }}
+                                    />
+                                    <button
+                                        onClick={() => saveNote(item.productId)}
+                                        style={{
+                                            backgroundColor: "#5a52d4",
+                                            color: "#fff",
+                                            border: "none",
+                                            borderRadius: "6px",
+                                            padding: "4px 12px",
+                                            cursor: "pointer",
+                                        }}
+                                    >
+                                        Save
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     ))}
+
                     {orderItems.length > 0 && (
                         <>
                             <div className={styles['total']}>

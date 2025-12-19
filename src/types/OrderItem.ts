@@ -4,3 +4,7 @@
     orderLineId?: string;
     basePrice?: number;
 }
+
+export interface OrderItemWithNotes extends OrderItem {
+    notes: string;
+}

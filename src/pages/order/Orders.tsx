@@ -64,21 +64,18 @@ export default function Orders() {
                                 <div key={idx} className={styles['order-item']}>
                                     <div className={styles['order-item-header']}>
                                         <div>
-                                          <span className={styles['product-name']}>
-                                            {product?.name || item.productId}
-                                          </span>
-                                            {product?.description && (
-                                                <p className={styles['product-description']}>
-                                                    {product.description}
+                                            <span className={styles['product-name']}>
+                                                {product?.name || item.productId}
+                                            </span>
+                                            {item.notes && (
+                                                <p className={styles['order-item-notes']}>
+                                                    {item.notes}
                                                 </p>
                                             )}
                                         </div>
                                         <span className={styles['product-qty']}>x{item.quantity}</span>
                                         <span className={styles['product-price']}>{item.subTotal}$</span>
                                     </div>
-                                    {item.notes && (
-                                        <p className={styles['order-item-notes']}>{item.notes}</p>
-                                    )}
                                 </div>
                             );
                         })}
