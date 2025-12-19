@@ -13,6 +13,9 @@ import { JSX, useState } from "react";
 import { BusinessType } from "./types/business";
 import { getBusinessByRegNumber } from "./hooks/getBusinessByRegNumber";
 import { StaffRole } from "./types/staff";
+import PayOrder from "./pages/payOrder/PayOrder";
+import { BusinessContext } from "./types/BusinessContext";
+import StaffDetailsPage from "./pages/StaffDetailsPage";
 
 function RequireAuth({
   isAuthenticated,
@@ -28,6 +31,7 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [businessType, setBusinessType] = useState<BusinessType>("BEAUTY");
   const [userRole, setUserRole] = useState<StaffRole>("STAFF");
+  const [registrationNumber, setRegistrationNumber] = useState("");
 
   const isCatering = businessType === "CATERING";
 

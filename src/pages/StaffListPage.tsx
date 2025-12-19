@@ -13,8 +13,9 @@ import {
 } from "@mui/material";
 import { STAFF_BASE, PRODUCTS_BASE } from "../constants/api";
 import AddStaffModal from "../components/AddStaffModal";
-import { BusinessType, StaffDto } from "../types/staff";
-import { ProductDto } from "../types/product";
+import {StaffDto } from "../types/staff";
+import { ProductDto } from "../types/ProductDto";
+import {BusinessType} from "../types/business";
 
 type Props = {
   registrationNumber: string;

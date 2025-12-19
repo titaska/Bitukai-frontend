@@ -21,7 +21,7 @@ import {
   listProducts,
   updateProduct,
 } from "../hooks/productsApi";
-import { ProductDto} from "../types/product";
+import { ProductDto} from "../types/ProductDto";
 
 import TaxFormModal from "../components/TaxFormModal";
 import { taxApi } from "../hooks/taxApi";
@@ -139,7 +139,14 @@ export default function Settings({ registrationNumber }: Props) {
         limit: 200,
       });
 
-      setRows(res?.data ?? []);
+      const data = Array.isArray(res?.data) ? res.data : [];
+
+      setRows(
+        data.map((p: any) => ({
+          ...p,
+          productType: String(p.productType ?? ""),
+        }))
+      );
     } catch (e) {
       console.error("Failed to load products:", e);
       setRows([]);

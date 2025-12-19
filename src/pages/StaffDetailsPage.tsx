@@ -14,8 +14,9 @@ import {
   MenuItem,
 } from "@mui/material";
 import { API_BASE, PRODUCTS_BASE } from "../constants/api";
-import {StaffUpdateDto, StaffDtoDetails, BusinessType} from "../types/staff";
-import {ProductDtoDetails } from "../types/product";
+import {StaffUpdateDto, StaffDtoDetails} from "../types/staff";
+import {ProductDtoDetails } from "../types/Product";
+import {BusinessType} from "../types/business";
 
 type Props = {
   registrationNumber: string;

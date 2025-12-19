@@ -1,13 +1,13 @@
 import { PRODUCTS_BASE } from "../constants/api";
 import {
-  ProductDto,
+  Product,
   ProductType,
   ProductCreateDto,
   ProductUpdateDto,
   ListParams,
-} from "../types/product";
+} from "../types/Product";
 
-function normalizeProductsResponse(json: any): ProductDto[] {
+function normalizeProductsResponse(json: any): Product[] {
   const arr = Array.isArray(json) ? json : (json?.data ?? []);
   if (!Array.isArray(arr)) return [];
 
@@ -17,7 +17,7 @@ function normalizeProductsResponse(json: any): ProductDto[] {
   }));
 }
 
-export async function listProducts(params: ListParams): Promise<{ data: ProductDto[]; pagination: any }> {
+export async function listProducts(params: ListParams): Promise<{ data: Product[]; pagination: any }> {
   const query = new URLSearchParams();
 
   query.set("registrationNumber", params.registrationNumber);
@@ -37,7 +37,7 @@ export async function listProducts(params: ListParams): Promise<{ data: ProductD
   };
 }
 
-export async function createProduct(dto: ProductCreateDto): Promise<ProductDto> {
+export async function createProduct(dto: ProductCreateDto): Promise<Product> {
   const payload: any = {
     ...dto,
     type: dto.productType,
@@ -55,7 +55,7 @@ export async function createProduct(dto: ProductCreateDto): Promise<ProductDto> 
   return normalizeProductsResponse([json])[0];
 }
 
-export async function updateProduct(productId: string, dto: ProductUpdateDto): Promise<ProductDto> {
+export async function updateProduct(productId: string, dto: ProductUpdateDto): Promise<Product> {
   const res = await fetch(`${PRODUCTS_BASE}/products/${productId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },

@@ -15,11 +15,13 @@ import {
 
 import {
   ProductCreateDto,
-  ProductDto,
+
   ProductType,
   ProductUpdateDto,
-} from "../types/product";
+} from "../types/Product";
+
 import { TaxDto } from "../types/tax";
+import { ProductDto } from "../types/ProductDto";
 
 type Props = {
   open: boolean;
@@ -42,7 +44,7 @@ export default function ProductModal({
   onSubmit,
   taxes,
 }: Props) {
-  const [productType, setProductType] = useState<ProductType>("SERVICE");
+  const [productType, setProductType] = useState("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [basePrice, setBasePrice] = useState<number>(0);
