@@ -58,4 +58,3 @@ export interface ReservationProduct {
   name: string;
   durationMinutes: number;
 }
-
