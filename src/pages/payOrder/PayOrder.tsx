@@ -65,6 +65,11 @@ export default function PayOrder() {
                     <span>${order.taxAmount?.toFixed(2)}</span>
                 </div>
 
+                <div className={styles.summaryRow}>
+                    <span>Service Charge</span>
+                    <span>${order.serviceChargeAmount?.toFixed(2)}</span>
+                </div>
+
                 <div className={styles.totalRow}>
                     <span>Total Due</span>
                     <span>${order.totalDue?.toFixed(2)}</span>
