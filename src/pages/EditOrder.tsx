@@ -3,9 +3,10 @@ import styles from "./newOrder/NewOrder.module.css";
 import { useNavigate, useParams } from "react-router-dom";
 import { useBusiness } from "../types/BusinessContext";
 import { useOrderDetails } from "../hooks/getOrderDetails";
-import { OrderItem } from "../types/OrderItem";
+import { OrderItemWithNotes } from "../types/OrderItem";
 import { updateOrder } from "../hooks/updateOrder";
 import { useProducts } from "../hooks/getProducts";
+import { Edit3 } from "lucide-react";
 
 export default function EditOrder() {
     const { registrationNumber } = useBusiness();
@@ -13,18 +14,22 @@ export default function EditOrder() {
     const { products } = useProducts(registrationNumber);
     const navigate = useNavigate();
 
-    const { order, productNames: initialProductNames, originalLines, loading, error } = useOrderDetails(orderId!);
+    const { order, productNames: initialProductNames, originalLines, loading, error } =
+        useOrderDetails(orderId!);
 
-    const [orderItemsState, setOrderItems] = useState<OrderItem[]>([]);
+    const [orderItemsState, setOrderItems] = useState<OrderItemWithNotes[]>([]);
     const [productNames, setProductNames] = useState<{ [key: string]: string }>({});
-    
+    const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+    const [tempNote, setTempNote] = useState("");
+
     useEffect(() => {
         if (order) {
-            const initialItems: OrderItem[] = order.lines.map(line => ({
+            const initialItems: OrderItemWithNotes[] = order.lines.map(line => ({
                 productId: line.productId,
                 quantity: line.quantity,
                 orderLineId: line.orderLineId,
                 basePrice: line.unitPrice,
+                notes: line.notes || "",
             }));
             setOrderItems(initialItems);
         }
@@ -43,13 +48,13 @@ export default function EditOrder() {
                         : i
                 );
             }
-            
+
             setProductNames(prevNames => ({
                 ...prevNames,
                 [product.productId]: product.name,
             }));
 
-            return [...prev, { ...product, quantity: 1, basePrice: product.basePrice }];
+            return [...prev, { ...product, quantity: 1, basePrice: product.basePrice, notes: "" }];
         });
     };
 
@@ -64,6 +69,19 @@ export default function EditOrder() {
                 .map(i => (i.productId === id ? { ...i, quantity: i.quantity - 1 } : i))
                 .filter(i => i.quantity > 0)
         );
+
+    const startEditingNote = (id: string, currentNote: string) => {
+        setEditingNoteId(id);
+        setTempNote(currentNote);
+    };
+
+    const saveNote = (id: string) => {
+        setOrderItems(prev =>
+            prev.map(i => (i.productId === id ? { ...i, notes: tempNote } : i))
+        );
+        setEditingNoteId(null);
+        setTempNote("");
+    };
 
     const confirmEdit = async () => {
         try {
@@ -116,13 +134,53 @@ export default function EditOrder() {
 
                     {orderItemsState.map(item => (
                         <div key={item.productId} className={styles["order-item"]}>
-                            <span>{productNames[item.productId] || "Unknown"}</span>
+                            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px", textAlign: "left" }}>
+                                <span>{productNames[item.productId] || "Unknown"}</span>
+                                {item.notes && (
+                                    <span style={{ fontSize: "0.85rem", color: "#888" }}>{item.notes}</span>
+                                )}
+                            </div>
+
                             <div className={styles["quantity-controls"]}>
                                 <button onClick={() => decreaseQuantity(item.productId)}>-</button>
                                 <span>{item.quantity}</span>
                                 <button onClick={() => increaseQuantity(item.productId)}>+</button>
                             </div>
-                            <span>${((item.basePrice ?? 0) * item.quantity).toFixed(2)}</span>
+
+                            <span style={{ marginLeft: "12px", minWidth: "70px", textAlign: "right" }}>
+                                ${((item.basePrice ?? 0) * item.quantity).toFixed(2)}
+                            </span>
+
+                            <Edit3
+                                size={18}
+                                style={{ cursor: "pointer", marginLeft: "12px", color: "#5a52d4" }}
+                                onClick={() => startEditingNote(item.productId, item.notes || "")}
+                            />
+
+                            {editingNoteId === item.productId && (
+                                <div style={{ display: "flex", gap: "4px", marginTop: "4px", width: "100%" }}>
+                                    <input
+                                        type="text"
+                                        value={tempNote}
+                                        onChange={e => setTempNote(e.target.value)}
+                                        placeholder="Enter note"
+                                        style={{ flex: 1, padding: "4px 8px", borderRadius: "6px", border: "1px solid #ddd" }}
+                                    />
+                                    <button
+                                        onClick={() => saveNote(item.productId)}
+                                        style={{
+                                            backgroundColor: "#5a52d4",
+                                            color: "#fff",
+                                            border: "none",
+                                            borderRadius: "6px",
+                                            padding: "4px 12px",
+                                            cursor: "pointer",
+                                        }}
+                                    >
+                                        Save
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     ))}
 

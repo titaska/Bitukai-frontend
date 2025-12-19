@@ -8,6 +8,7 @@ export interface OrderDto {
     closeddAt?: string;
     subtotalAmount?: number;
     taxAmount?: number;
+    serviceChargeAmount?: number;
     totalDue?: number;
     notes?: string;
     lines: OrderLineDto[];
