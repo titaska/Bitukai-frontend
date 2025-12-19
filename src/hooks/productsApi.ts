@@ -40,7 +40,7 @@ export async function listProducts(params: ListParams): Promise<{ data: Product[
 export async function createProduct(dto: ProductCreateDto): Promise<Product> {
   const payload: any = {
     ...dto,
-    type: dto.productType,
+    type: dto.type,
   };
   delete payload.productType;
 
