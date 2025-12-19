@@ -16,12 +16,13 @@ export interface ReservationProduct {
   durationMinutes: number;
 }
 export type ProductType = "ITEM" | "SERVICE";
+export type ProductTypeWire = ProductType | 0 | 1;
 
 export type ProductDto = {
   productId: string;
   registrationNumber: string;
 
-  productType: ProductType;
+  type: ProductType;
 
   name: string;
   description: string;
@@ -33,7 +34,7 @@ export type ProductDto = {
 
 export type ProductCreateDto = {
   registrationNumber: string;
-  productType: string;
+  type: ProductTypeWire;
   name: string;
   description: string;
   basePrice: number;

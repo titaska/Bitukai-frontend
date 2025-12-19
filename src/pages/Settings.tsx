@@ -21,15 +21,20 @@ import {
   listProducts,
   updateProduct,
 } from "../hooks/productsApi";
-import { ProductDto} from "../types/ProductDto";
+import { ProductDto } from "../types/ProductDto";
 
 import TaxFormModal from "../components/TaxFormModal";
 import { taxApi } from "../hooks/taxApi";
 import { TaxCreateUpdate, TaxDto } from "../types/tax";
 
-type Props = { registrationNumber: string };
+import { BusinessType } from "../types/business"; // 👈 NAUJAS
 
-export default function Settings({ registrationNumber }: Props) {
+type Props = {
+  registrationNumber: string;
+  businessType: BusinessType; // 👈 NAUJAS
+};
+
+export default function Settings({ registrationNumber, businessType }: Props) {
   /* ======================================================
      TAXES
   ====================================================== */
@@ -140,16 +145,16 @@ export default function Settings({ registrationNumber }: Props) {
       });
 
       const data = Array.isArray(res?.data) ? res.data : [];
-      
+
       const filtered = data.filter(
-          (p: any) => p.registrationNumber === registrationNumber
+        (p: any) => p.registrationNumber === registrationNumber
       );
 
       setRows(
-          filtered.map((p: any) => ({
-            ...p,
-            productType: String(p.productType ?? ""),
-          }))
+        filtered.map((p: any) => ({
+          ...p,
+          productType: String(p.productType ?? ""),
+        }))
       );
     } catch (e) {
       console.error("Failed to load products:", e);
@@ -284,9 +289,10 @@ export default function Settings({ registrationNumber }: Props) {
         onClose={() => setModalOpen(false)}
         mode={editItem ? "edit" : "create"}
         registrationNumber={registrationNumber}
+        businessType={businessType}   // ✅ ESMĖ
         initial={editItem}
         onSubmit={editItem ? handleEdit : handleCreate}
-        taxes={taxes}  
+        taxes={taxes}
       />
 
       {/* ---------- TAXES ---------- */}

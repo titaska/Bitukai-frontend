@@ -142,7 +142,7 @@ export default function App() {
                 <RequireAuth isAuthenticated={isAuthenticated}>
                   {userRole === "SUPERADMIN" ? (
                     registrationNumber ? (
-                      <Settings registrationNumber={registrationNumber} />
+                      <Settings registrationNumber={registrationNumber} businessType={businessType} />
                     ) : (
                       <Navigate to="/" replace />
                     )
