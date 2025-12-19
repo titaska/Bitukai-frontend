@@ -8,15 +8,22 @@ import NewReservation from "./pages/NewReservation/NewReservation";
 import EditReservation from "./pages/editReservation/EditReservation";
 import Staff from "./pages/Staff";
 import Settings from "./pages/Settings";
-import PayOrder from "./pages/payOrder/PayOrder";
 import {Login} from "./pages/Login";
 import { JSX, useState } from "react";
 import { BusinessType } from "./types/business";
 import { getBusinessByRegNumber } from "./hooks/getBusinessByRegNumber";
 import { StaffRole } from "./types/staff";
+import PayOrder from "./pages/payOrder/PayOrder";
 import { BusinessContext } from "./types/BusinessContext";
+import StaffDetailsPage from "./pages/StaffDetailsPage";
 
-function RequireAuth({ isAuthenticated, children }: { isAuthenticated: boolean; children: JSX.Element }) {
+function RequireAuth({
+  isAuthenticated,
+  children,
+}: {
+  isAuthenticated: boolean;
+  children: JSX.Element;
+}) {
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 }
 
@@ -35,11 +42,11 @@ export default function App() {
     <Router>
       <div style={{ display: "flex" }}>
         {isAuthenticated && <Navbar businessType={businessType} userRole={userRole} />}
-          
+       
         <main style={{ marginLeft: "80px", padding: "20px", width: "100%" }}>
           <Routes>
-            <Route 
-              path="/login" 
+            <Route
+              path="/login"
               element={
                 isAuthenticated ? (
                   <Navigate to="/" replace />
@@ -56,7 +63,7 @@ export default function App() {
                 )
               }
             />
-            
+
             <Route
               path="/"
               element={
@@ -70,7 +77,7 @@ export default function App() {
               path={isCatering ? "/edit-order/:orderId" : "/edit-reservation/:appointmentId"}
               element={
                 <RequireAuth isAuthenticated={isAuthenticated}>
-                  {isCatering ? <EditOrder/> : <EditReservation/>}
+                  {isCatering ? <EditOrder /> : <EditReservation />}
                 </RequireAuth>
               }
             />
@@ -82,23 +89,27 @@ export default function App() {
                           <PayOrder/>
                       </RequireAuth>
                   }
-              />  
-              
-            <Route
-                path={isCatering ? "/new-order" : "/new-reservation"}
-                element={
-                    <RequireAuth isAuthenticated={isAuthenticated}>
-                        {isCatering ? <NewOrder /> : <NewReservation />}
-                    </RequireAuth>
-                }
-            />            
-            
-            <Route
+              />
+
+              <Route
+                  path={isCatering ? "/new-order" : "/new-reservation"}
+                  element={
+                      <RequireAuth isAuthenticated={isAuthenticated}>
+                          {isCatering ? <NewOrder /> : <NewReservation />}
+                      </RequireAuth>
+                  }
+              />
+
+              <Route
               path="/staff"
               element={
                 <RequireAuth isAuthenticated={isAuthenticated}>
                   {(userRole === "OWNER" || userRole === "SUPERADMIN") ? (
-                    <Staff />
+                    registrationNumber ? (
+                      <Staff registrationNumber={registrationNumber} businessType={businessType} />
+                    ) : (
+                      <Navigate to="/" replace />
+                    )
                   ) : (
                     <Navigate to="/" replace />
                   )}
@@ -106,12 +117,35 @@ export default function App() {
               }
             />
 
+            {/* STAFF DETAILS */}
+            <Route
+              path="/staff/:staffId"
+              element={
+                <RequireAuth isAuthenticated={isAuthenticated}>
+                  {(userRole === "OWNER" || userRole === "SUPERADMIN") ? (
+                    registrationNumber ? (
+                      <StaffDetailsPage registrationNumber={registrationNumber} businessType={businessType}/>
+                    ) : (
+                      <Navigate to="/" replace />
+                    )
+                  ) : (
+                    <Navigate to="/" replace />
+                  )}
+                </RequireAuth>
+              }
+            />
+
+            {/* SETTINGS / PRODUCTS */}
             <Route
               path="/settings"
               element={
                 <RequireAuth isAuthenticated={isAuthenticated}>
                   {userRole === "SUPERADMIN" ? (
-                    <Settings />
+                    registrationNumber ? (
+                      <Settings registrationNumber={registrationNumber} />
+                    ) : (
+                      <Navigate to="/" replace />
+                    )
                   ) : (
                     <Navigate to="/" replace />
                   )}
@@ -122,11 +156,8 @@ export default function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
-
       </div>
     </Router>
       </BusinessContext.Provider>
   );
 }
-
-

@@ -1,3 +1,15 @@
-export default function Staff() {
-  return <h1>Staff Page</h1>;
+import StaffListPage from "./StaffListPage";
+
+type Props = {
+  registrationNumber: string;
+  businessType: "CATERING" | "BEAUTY";
+};
+
+export default function Staff({ registrationNumber, businessType }: Props) {
+  return (
+    <StaffListPage
+      registrationNumber={registrationNumber}
+      businessType={businessType}
+    />
+  );
 }

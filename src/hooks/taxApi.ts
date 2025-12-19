@@ -1,0 +1,54 @@
+// src/services/taxApi.ts
+import { API_BASE } from "../constants/api";
+import { TaxCreateUpdate, TaxDto } from "../types/tax";
+
+const TAX_URL = `${API_BASE}/tax`;
+
+
+async function readTextSafe(res: Response) {
+  const text = await res.text().catch(() => "");
+  return text || `Request failed with status ${res.status}`;
+}
+
+async function handleJson<T>(res: Response): Promise<T> {
+  if (!res.ok) {
+    throw new Error(await readTextSafe(res));
+  }
+  return (await res.json()) as T;
+}
+
+export const taxApi = {
+  async getAll(): Promise<TaxDto[]> {
+    const res = await fetch(TAX_URL, { headers: { Accept: "application/json" } });
+    return handleJson<TaxDto[]>(res);
+  },
+
+  async getById(id: string): Promise<TaxDto> {
+    const res = await fetch(`${TAX_URL}/${id}`, { headers: { Accept: "application/json" } });
+    return handleJson<TaxDto>(res);
+  },
+
+  async create(dto: TaxCreateUpdate): Promise<TaxDto> {
+    const res = await fetch(TAX_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(dto),
+    });
+    return handleJson<TaxDto>(res);
+  },
+
+  async update(id: string, dto: TaxCreateUpdate): Promise<void> {
+    const res = await fetch(`${TAX_URL}/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(dto),
+    });
+
+    if (!res.ok) throw new Error(await readTextSafe(res));
+  },
+
+  async delete(id: string): Promise<void> {
+    const res = await fetch(`${TAX_URL}/${id}`, { method: "DELETE" });
+    if (!res.ok) throw new Error(await readTextSafe(res));
+  },
+};
